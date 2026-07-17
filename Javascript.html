@@ -1,0 +1,247 @@
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT (Client-Side Logic)             -->
+  <!-- ========================================== -->
+  <script>
+    // --- UTILITAS ---
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('globalToast');
+      toast.innerText = msg;
+      toast.className = `fixed top-5 right-5 px-6 py-3 rounded shadow-lg text-white font-semibold z-50 fade-in ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // --- LOGIKA UI (Navigasi) ---
+    function pindahMenu(menu) {
+  // daftar semua modul/menu
+  const modulList = [
+    'siswa','guru'
+  ];
+
+  // sembunyikan semua modul & reset tombol
+  modulList.forEach(m => {
+    const modulEl = document.getElementById('modul' + capitalize(m));
+    const btnEl   = document.getElementById('menu' + capitalize(m) + 'Btn');
+
+    if (modulEl) modulEl.classList.add('hidden'); // aman walau null
+    if (btnEl) {
+      btnEl.className =
+        "w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-300";
+    }
+  });
+
+  // tampilkan modul sesuai menu
+  const activeModul = document.getElementById('modul' + capitalize(menu));
+  const activeBtn   = document.getElementById('menu' + capitalize(menu) + 'Btn');
+
+  if (activeModul) activeModul.classList.remove('hidden');
+  if (activeBtn) {
+    activeBtn.className =
+      "w-full text-left px-4 py-3 rounded-lg bg-blue-600 text-white";
+  }
+
+  // ubah judul header
+  const headerTitle = document.getElementById('headerTitle');
+  if (headerTitle) headerTitle.innerText = "Manajemen Data " + capitalize(menu);
+
+  // mapping loader sesuai menu
+  const loaders = {
+    siswa: loadDataSiswa,
+    guru: loadDataGuru,
+  
+  };
+
+  if (loaders[menu]) loaders[menu](); // panggil loader kalau ada
+}
+
+// helper untuk kapitalisasi
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+  </script>
+  <script>
+    // --- LOGIKA LOGIN ---
+    function prosesLogin() {
+      let u = document.getElementById('username').value;
+      let p = document.getElementById('password').value;
+      if(!u || !p) return alert("Isi username & password!");
+      
+      document.getElementById('btnLogin').innerText = "Loading...";
+      google.script.run.withSuccessHandler(res => {
+        document.getElementById('btnLogin').innerText = "Masuk";
+        if(res.success) {
+          document.getElementById('viewLogin').classList.add('hidden');
+          document.getElementById('viewDashboard').classList.remove('hidden');
+          showToast(res.message);
+          loadDataSiswa(); // Muat data awal
+        } else {
+          showToast(res.message, 'error');
+        }
+      }).checkLogin(u, p);
+    }
+
+    function prosesLogout() {
+      document.getElementById('viewDashboard').classList.add('hidden');
+      document.getElementById('viewLogin').classList.remove('hidden');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+</script>
+<script>
+const crudConfig = {
+  siswa: {
+    tableId: 'tabelSiswa',
+    form: { id:'siswa_id', nama:'siswa_nama', kelas:'siswa_kelas', jurusan:'siswa_jurusan' },
+    titleFormId: 'titleFormSiswa',
+    btnSaveId: 'btnSimpanSiswa',
+    btnCancelId: 'btnBatalSiswa',
+    loader: ['getSiswa'],   // fungsi loader
+    create: 'createSiswa',
+    update: 'updateSiswa',
+    delete: 'deleteSiswa',
+    data: [] // tampilkan semua kolom
+  },
+  guru: {
+    tableId: 'tabelGuru',
+    form: { id:'guru_id', nama:'guru_nama', mapel:'guru_mapel', nohp:'guru_nohp' },
+    titleFormId: 'titleFormGuru',
+    btnSaveId: 'btnSimpanGuru',
+    btnCancelId: 'btnBatalGuru',
+    loader: ['getGuru'],    // fungsi loader
+    create: 'createGuru',
+    update: 'updateGuru',
+    delete: 'deleteGuru',
+    data: ['nama','mapel'] // hanya tampilkan kolom nama & mapel
+  }
+};
+
+// --- LOAD DATA ---
+function loadData(entity) {
+  const cfg = crudConfig[entity];
+  const tbody = document.getElementById(cfg.tableId);
+  tbody.innerHTML = '<tr><td colspan="99">Memuat...</td></tr>';
+
+  // jika loader kosong → ambil sheet default
+  if (!cfg.loader || cfg.loader.length === 0) {
+    google.script.run.withSuccessHandler(data => renderTable(entity, data)).getSheet(entity);
+  } else {
+    cfg.loader.forEach(fn => {
+      google.script.run.withSuccessHandler(data => renderTable(entity, data))[fn]();
+    });
+  }
+}
+
+// --- RENDER TABLE ---
+function renderTable(entity, data) {
+  const cfg = crudConfig[entity];
+  const tbody = document.getElementById(cfg.tableId);
+  tbody.innerHTML = '';
+
+  if(data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="99">Data kosong.</td></tr>';
+    return;
+  }
+
+  data.forEach(row => {
+    let cells = '';
+    if(cfg.data.length === 0) {
+      // tampilkan semua kolom
+      cells = row.map(val=>`<td>${val}</td>`).join('');
+    } else {
+      // tampilkan hanya kolom tertentu
+      cfg.data.forEach((colName, idx) => {
+        let val = row[idx]; // asumsi urutan sesuai sheet
+        cells += `<td>${val}</td>`;
+      });
+    }
+
+    tbody.innerHTML += `
+      <tr class="hover:bg-slate-50 border-b">
+        ${cells}
+        <td class="py-2 px-4 flex gap-2">
+          <button onclick="editData('${entity}','${row.join("','")}')" class="text-blue-600 hover:underline">Edit</button>
+          <button onclick="hapusData('${entity}','${row[0]}')" class="text-red-600 hover:underline">Hapus</button>
+        </td>
+      </tr>`;
+  });
+}
+
+// --- SIMPAN DATA ---
+function simpanData(entity) {
+  const cfg = crudConfig[entity];
+  let obj = {};
+  for (let key in cfg.form) {
+    obj[key] = document.getElementById(cfg.form[key]).value;
+  }
+  if(!obj.nama) return showToast("Nama wajib diisi!", "error");
+
+  let btn = document.getElementById(cfg.btnSaveId);
+  btn.innerText = "Menyimpan...";
+
+  let func = obj.id === "" ? cfg.create : cfg.update;
+  google.script.run.withSuccessHandler(res => {
+    showToast(res);
+    resetForm(entity);
+    loadData(entity);
+  })[func](obj);
+}
+
+// --- EDIT DATA ---
+function editData(entity, ...values) {
+  const cfg = crudConfig[entity];
+  document.getElementById(cfg.titleFormId).innerText = "Edit " + capitalize(entity);
+  let i = 0;
+  for (let key in cfg.form) {
+    document.getElementById(cfg.form[key]).value = values[i++] || "";
+  }
+  document.getElementById(cfg.btnCancelId).classList.remove('hidden');
+}
+
+// --- RESET FORM ---
+function resetForm(entity) {
+  const cfg = crudConfig[entity];
+  document.getElementById(cfg.titleFormId).innerText = "Tambah " + capitalize(entity);
+  for (let key in cfg.form) {
+    document.getElementById(cfg.form[key]).value = "";
+  }
+  document.getElementById(cfg.btnSaveId).innerText = "Simpan";
+  document.getElementById(cfg.btnCancelId).classList.add('hidden');
+}
+
+// --- HAPUS DATA ---
+function hapusData(entity, id) {
+  const cfg = crudConfig[entity];
+  if(confirm("Hapus " + entity + " ini?")) {
+    showToast("Menghapus...");
+    google.script.run.withSuccessHandler(res => {
+      showToast(res);
+      loadData(entity);
+    })[cfg.delete](id);
+  }
+}
+
+// --- HELPER ---
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+
+</script>
+
+<script>
+    // --- LOGIKA CRUD SISWA ---
+    function loadDataSiswa() {loadData('siswa')}
+    function simpanSiswa() {simpanData('siswa')}
+    function editSiswa() {editData('siswa')}
+    function resetFormSiswa() {resetForm('siswa')}
+    function hapusSiswa() {hapusData('siswa')}
+</script>
+ <script>
+   // --- LOGIKA CRUD GURU ---
+  function loadDataGuru() {loadData('guru')}
+    function simpanGuru() {simpanData('guru')}
+    function editGuru() {editData('guru')}
+    function resetFormGuru() {resetForm('guru')}
+    function hapusGuru() {hapusData('guru')}
+  </script>

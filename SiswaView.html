@@ -1,0 +1,30 @@
+<!-- ========================================== -->
+        <!-- MODUL: SISWA                               -->
+        <!-- ========================================== -->
+        <div id="modulSiswa" class="fade-in">
+          <!-- Form Siswa -->
+          <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
+            <h4 id="titleFormSiswa" class="text-lg font-semibold mb-4 text-slate-700">Tambah Siswa Baru</h4>
+            <input type="hidden" id="siswa_id">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <input type="text" id="siswa_nama" placeholder="Nama Lengkap" class="border p-2.5 rounded-lg w-full outline-none">
+              <input type="text" id="siswa_kelas" placeholder="Kelas" class="border p-2.5 rounded-lg w-full outline-none">
+              <input type="text" id="siswa_jurusan" placeholder="Jurusan" class="border p-2.5 rounded-lg w-full outline-none">
+            </div>
+            <div class="flex gap-3">
+              <button id="btnSimpanSiswa" onclick="simpanSiswa()" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg">Simpan</button>
+              <button id="btnBatalSiswa" onclick="resetFormSiswa()" class="bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg hidden">Batal</button>
+            </div>
+          </div>
+          <!-- Tabel Siswa -->
+          <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50 border-b">
+                <tr>
+                  <th class="py-3 px-4">ID</th><th class="py-3 px-4">Nama</th><th class="py-3 px-4">Kelas</th><th class="py-3 px-4">Jurusan</th><th class="py-3 px-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tabelSiswa" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
