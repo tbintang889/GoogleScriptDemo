@@ -91,30 +91,111 @@ function capitalize(str) {
 <script>
 const crudConfig = {
   siswa: {
+    formWrapperId: 'formSiswa',
     tableId: 'tabelSiswa',
-    form: { id:'siswa_id', nama:'siswa_nama', kelas:'siswa_kelas', jurusan:'siswa_jurusan' },
     titleFormId: 'titleFormSiswa',
+    form: {
+      id:       { el:'siswa_id', type:'hidden' },
+      nama:     { el:'siswa_nama', type:'text', placeholder:'Nama Lengkap' },    
+      kelas:   { el:'siswa_kelas', type:'radio', options:['XI','XII'] },
+      jurusan:   { el:'siswa_jurusan', type:'dropdown', options:['RPL','PPLG','TKJ'] },
+
+    },
     btnSaveId: 'btnSimpanSiswa',
     btnCancelId: 'btnBatalSiswa',
-    loader: ['getSiswa'],   // fungsi loader
+    loader: ['getSiswa'],
     create: 'createSiswa',
     update: 'updateSiswa',
     delete: 'deleteSiswa',
-    data: [] // tampilkan semua kolom
+    data: []
   },
   guru: {
+    formWrapperId: 'formGuru',
     tableId: 'tabelGuru',
-    form: { id:'guru_id', nama:'guru_nama', mapel:'guru_mapel', nohp:'guru_nohp' },
     titleFormId: 'titleFormGuru',
+    form: { 
+      id: { el:'guru_id', type:'hidden' }, 
+      nama: { el:'guru_nama', type:'text', placeholder:'Nama Guru' }, 
+      mapel: { el:'guru_mapel', type:'text', placeholder:'Mata Pelajaran' }, 
+      nohp: { el:'guru_nohp', type:'text', placeholder:'No HP' } 
+    },
     btnSaveId: 'btnSimpanGuru',
     btnCancelId: 'btnBatalGuru',
-    loader: ['getGuru'],    // fungsi loader
+    loader: ['getGuru'],
     create: 'createGuru',
     update: 'updateGuru',
     delete: 'deleteGuru',
-    data: ['nama','mapel'] // hanya tampilkan kolom nama & mapel
+    data: ['nama','mapel']
   }
 };
+// RENDER FORM
+
+function renderForm(entity) {
+  const cfg = crudConfig[entity];
+  const wrapper = document.getElementById(cfg.formWrapperId);
+  wrapper.innerHTML = `<h4 id="${cfg.titleFormId}" class="text-lg font-semibold mb-4 text-slate-700">Tambah ${capitalize(entity)}</h4>`; // kosongkan isi & set judul
+
+  for (let key in cfg.form) {
+    const field = cfg.form[key];
+    let html = '';
+
+    switch(field.type) {
+      case 'hidden':
+        html = `<input type="hidden" id="${field.el}">`;
+        break;
+      case 'text':
+      case 'email':
+      case 'number':
+      case 'password':
+        html = `<input type="${field.type}" id="${field.el}" placeholder="${field.placeholder||''}" class="border p-2.5 rounded-lg w-full">`;
+        break;
+      case 'textarea':
+        html = `<textarea id="${field.el}" placeholder="${field.placeholder||''}" class="border p-2.5 rounded-lg w-full"></textarea>`;
+        break;
+      case 'radio':
+        html = field.options.map(opt =>
+          `<label><input type="radio" name="${field.el}" value="${opt}"> ${opt}</label>`
+        ).join(' ');
+        break;
+      case 'dropdown':
+        html = `<select id="${field.el}" class="border p-2.5 rounded-lg w-full">` +
+               field.options.map(opt=>`<option value="${opt}">${opt}</option>`).join('') +
+               `</select>`;
+        break;
+    }
+
+    wrapper.innerHTML += `<div class="mb-3">${html}</div>`;
+  }
+
+  // tombol simpan & batal
+  wrapper.innerHTML += `
+    <div class="flex gap-3">
+      <button id="${cfg.btnSaveId}" onclick="simpanData('${entity}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg">Simpan</button>
+      <button id="${cfg.btnCancelId}" onclick="resetForm('${entity}')" class="bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg hidden">Batal</button>
+    </div>`;
+}
+
+// --- HELPER UNTUK FORM ---
+function getFieldValue(field) {
+  if (field.type === 'radio') {
+    const checked = document.querySelector(`input[name="${field.el}"]:checked`);
+    return checked ? checked.value : '';
+  }
+  const el = document.getElementById(field.el);
+  return el ? el.value : '';
+}
+
+function setFieldValue(field, val) {
+  if (field.type === 'radio') {
+    const radios = document.querySelectorAll(`input[name="${field.el}"]`);
+    radios.forEach(radio => {
+      radio.checked = (radio.value === val);
+    });
+  } else {
+    const el = document.getElementById(field.el);
+    if (el) el.value = val;
+  }
+}
 
 // --- LOAD DATA ---
 function loadData(entity) {
@@ -172,7 +253,7 @@ function simpanData(entity) {
   const cfg = crudConfig[entity];
   let obj = {};
   for (let key in cfg.form) {
-    obj[key] = document.getElementById(cfg.form[key]).value;
+    obj[key] = getFieldValue(cfg.form[key]);
   }
   if(!obj.nama) return showToast("Nama wajib diisi!", "error");
 
@@ -193,7 +274,7 @@ function editData(entity, ...values) {
   document.getElementById(cfg.titleFormId).innerText = "Edit " + capitalize(entity);
   let i = 0;
   for (let key in cfg.form) {
-    document.getElementById(cfg.form[key]).value = values[i++] || "";
+    setFieldValue(cfg.form[key], values[i++] || "");
   }
   document.getElementById(cfg.btnCancelId).classList.remove('hidden');
 }
@@ -203,7 +284,7 @@ function resetForm(entity) {
   const cfg = crudConfig[entity];
   document.getElementById(cfg.titleFormId).innerText = "Tambah " + capitalize(entity);
   for (let key in cfg.form) {
-    document.getElementById(cfg.form[key]).value = "";
+    setFieldValue(cfg.form[key], "");
   }
   document.getElementById(cfg.btnSaveId).innerText = "Simpan";
   document.getElementById(cfg.btnCancelId).classList.add('hidden');
@@ -236,6 +317,8 @@ function capitalize(str) {
     function editSiswa() {editData('siswa')}
     function resetFormSiswa() {resetForm('siswa')}
     function hapusSiswa() {hapusData('siswa')}
+    renderForm('siswa');
+
 </script>
  <script>
    // --- LOGIKA CRUD GURU ---
@@ -244,4 +327,6 @@ function capitalize(str) {
     function editGuru() {editData('guru')}
     function resetFormGuru() {resetForm('guru')}
     function hapusGuru() {hapusData('guru')}
+    renderForm('guru');
+
   </script>
