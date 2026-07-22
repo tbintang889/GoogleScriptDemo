@@ -73,15 +73,42 @@ function buildResult(success, message) {
 // ==========================================
 // ENTRY POINT WEB APP
 // ==========================================
+function resolveTemplatePath(filename) {
+  var normalizedName = String(filename || '').trim();
+  var includeMap = {
+    'Head': 'views/layout/Head',
+    'Login': 'views/auth/Login',
+    'Aside': 'views/layout/Aside',
+    'Index': 'views/layout/Index',
+    'dashboardView': 'views/modules/dashboardView',
+    'SiswaView': 'views/modules/SiswaView',
+    'GuruView': 'views/modules/GuruView',
+    'MapelView': 'views/modules/MapelView',
+    'NilaiView': 'views/modules/NilaiView',
+    'laporanNilaiView': 'views/modules/laporanNilaiView',
+    'Javascript': 'views/scripts/Javascript',
+    'JavascriptHelper': 'views/scripts/helper/JavascriptHelper',
+    'JavascriptCore': 'views/scripts/core/JavascriptCore',
+    'JavascriptLogin': 'views/scripts/modules/login/JavascriptLogin',
+    'JavascriptCrud': 'views/scripts/modules/crud/JavascriptCrud',
+    'JavascriptNilai': 'views/scripts/modules/nilai/JavascriptNilai',
+    'JavascriptLaporan': 'views/scripts/modules/laporan/JavascriptLaporan',
+    'JavascriptDashboard': 'views/scripts/modules/dashboard/JavascriptDashboard'
+  };
+
+  return includeMap[normalizedName] || normalizedName;
+}
+
 function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
+  return HtmlService.createTemplateFromFile(resolveTemplatePath('Index'))
     .evaluate()
     .setTitle('Aplikasi Sederhana')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function include(filename) {
-  return HtmlService.createTemplateFromFile(filename)
+  var resolvedName = resolveTemplatePath(filename);
+  return HtmlService.createTemplateFromFile(resolvedName)
     .evaluate()
     .getContent();
 }

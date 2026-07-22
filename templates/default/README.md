@@ -13,5 +13,13 @@ Struktur ini dipersiapkan sebagai starter template untuk project baru berbasis G
 - modules/login.js: alur login/logout
 - modules/crud.js: pola CRUD yang bisa dipakai ulang
 
+## Susunan folder yang disarankan
+- views/layout/: bagian layout utama seperti Head, Aside, Index
+- views/auth/: form login dan komponen autentikasi
+- views/modules/: file view khusus untuk dashboard, CRUD, laporan
+- views/scripts/helper/: helper UI reusable
+- views/scripts/core/: registrasi menu dan navigasi
+- views/scripts/modules/: modul login, crud, nilai, laporan, dashboard
+
 ## Catatan
 File ini bersifat starter dan masih perlu disesuaikan dengan kebutuhan modul masing-masing project.
