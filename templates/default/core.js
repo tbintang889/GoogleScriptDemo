@@ -1,0 +1,61 @@
+const menuRegistry = {
+  dashboard: {
+    title: 'Dashboard',
+    loader: () => typeof loadDataDashboard === 'function' && loadDataDashboard()
+  },
+  siswa: {
+    title: 'Manajemen Data Siswa',
+    loader: () => typeof loadDataSiswa === 'function' && loadDataSiswa()
+  },
+  guru: {
+    title: 'Manajemen Data Guru',
+    loader: () => typeof loadDataGuru === 'function' && loadDataGuru()
+  },
+  mapel: {
+    title: 'Manajemen Data Mata Pelajaran',
+    loader: () => typeof loadDataMapel === 'function' && loadDataMapel()
+  },
+  nilai: {
+    title: 'Manajemen Data Nilai',
+    loader: () => typeof loadDataNilai === 'function' && loadDataNilai()
+  },
+  laporanNilai: {
+    title: 'Laporan Nilai',
+    loader: () => typeof loadDataLaporanNilai === 'function' && loadDataLaporanNilai()
+  }
+};
+
+function registerMenu(menuKey, config) {
+  menuRegistry[menuKey] = config;
+}
+
+function pindahMenu(menu) {
+  const cfg = menuRegistry[menu];
+
+  Object.keys(menuRegistry).forEach(mKey => {
+    const modulEl = document.getElementById('modul' + capitalize(mKey));
+    const btnEl = document.getElementById('menu' + capitalize(mKey) + 'Btn');
+
+    if (modulEl) modulEl.classList.add('hidden');
+    if (btnEl) {
+      btnEl.className = 'w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors';
+    }
+  });
+
+  const activeModul = document.getElementById('modul' + capitalize(menu));
+  const activeBtn = document.getElementById('menu' + capitalize(menu) + 'Btn');
+
+  if (activeModul) activeModul.classList.remove('hidden');
+  if (activeBtn) {
+    activeBtn.className = 'w-full text-left px-4 py-3 rounded-lg bg-blue-600 text-white font-medium shadow-sm transition-colors';
+  }
+
+  const headerTitle = document.getElementById('headerTitle');
+  if (headerTitle && cfg) {
+    headerTitle.innerText = cfg.title || ('Manajemen Data ' + capitalize(menu));
+  }
+
+  if (cfg && typeof cfg.loader === 'function') {
+    cfg.loader();
+  }
+}
