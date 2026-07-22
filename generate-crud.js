@@ -25,6 +25,14 @@
  * ==========================================
  */
 
+// Guard: prevent execution in non-Node.js environments (e.g. Google Apps Script)
+if (typeof require === 'undefined' || typeof module === 'undefined') {
+  // Running in GAS or browser; do nothing
+} else {
+  main();
+}
+
+function main() {
 const fs = require('fs');
 const path = require('path');
 
@@ -644,4 +652,7 @@ console.log(`
    4. Pastikan sheet "${entityCapital}" ada di spreadsheet
    5. Deploy ulang web app
 `);
+}
+
+
 

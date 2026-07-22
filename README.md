@@ -146,6 +146,16 @@ clasp push
 clasp open
 ```
 
+### ⚠️ Penting: File Development Jangan Sampai Ter-Push
+
+File development seperti `generate-crud.js`, `README.md`, `TEMPLATE_NOTES.md`, dan `.gitignore` sudah otomatis **dikecualikan** dari push via file `.claspignore`. Ini mencegah error seperti `ReferenceError: require is not defined` jika file Node.js ikut ter-push ke Apps Script.
+
+Jika Anda menambah file development baru, tambahkan pattern-nya ke `.claspignore`:
+```
+**/skrip-anda.js
+**/folder-dev/*
+```
+
 ---
 
 🤖 CRUD Generator CLI (Otomatis)
