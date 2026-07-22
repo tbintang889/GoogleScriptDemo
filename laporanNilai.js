@@ -1,0 +1,76 @@
+// File: laporanNilai.js
+
+/**
+ * Mengambil data laporan nilai hasil JOIN antara sheet Nilai, Siswa, dan Guru
+ * Beserta daftar filter unik untuk Mapel, Guru, dan Siswa
+ */
+function getLaporanNilai() {
+  var sheetNilai = getSheet("Nilai");
+  if (!sheetNilai) return { data: [], filterOptions: { siswa: [], guru: [], mapel: [] } };
+  var dataNilai = sheetNilai.getDataRange().getValues();
+  if (dataNilai.length > 0) dataNilai.shift(); // Hapus baris header
+
+  // 1. Ambil & Mapping Data Siswa
+  var sheetSiswa = getSheet("Siswa");
+  var dataSiswa = sheetSiswa ? sheetSiswa.getDataRange().getValues() : [];
+  if (dataSiswa.length > 0) dataSiswa.shift();
+  var siswaMap = {};
+  var listSiswa = [];
+  dataSiswa.forEach(function(row) {
+    var id = row[0].toString();
+    var namaSiswa = row[1] + " (" + row[2] + " " + row[3] + ")";
+    siswaMap[id] = namaSiswa;
+    listSiswa.push({ id: id, nama: namaSiswa });
+  });
+
+  // 2. Ambil & Mapping Data Guru
+  var sheetGuru = getSheet("Guru");
+  var dataGuru = sheetGuru ? sheetGuru.getDataRange().getValues() : [];
+  if (dataGuru.length > 0) dataGuru.shift();
+  var guruMap = {};
+  var listGuru = [];
+  var setMapel = {};
+  dataGuru.forEach(function(row) {
+    var id = row[0].toString();
+    var namaGuru = row[1];
+    var mapel = row[2];
+    guruMap[id] = { nama: namaGuru, mapel: mapel };
+    listGuru.push({ id: id, nama: namaGuru });
+    if (mapel && mapel.trim() !== "") setMapel[mapel.trim()] = true;
+  });
+
+  var listMapel = Object.keys(setMapel).sort();
+
+  // 3. Gabungkan Data (In-Memory JOIN)
+  var reportData = dataNilai.map(function(row, idx) {
+    var idNilai  = row[0];
+    var siswaId  = row[1].toString();
+    var guruId   = row[2].toString();
+    var nilai    = Number(row[3]) || 0;
+    var predikat = row[4] || hitungPredikat(nilai);
+
+    var namaSiswa = siswaMap[siswaId] || "Siswa Tidak Ditemukan";
+    var infoGuru  = guruMap[guruId] || { nama: "Guru Tidak Ditemukan", mapel: "-" };
+
+    return {
+      no: idx + 1,
+      idNilai: idNilai,
+      siswaId: siswaId,
+      namaSiswa: namaSiswa,
+      guruId: guruId,
+      namaGuru: infoGuru.nama,
+      mapel: infoGuru.mapel,
+      nilai: nilai,
+      predikat: predikat
+    };
+  });
+
+  return {
+    data: reportData,
+    filterOptions: {
+      siswa: listSiswa,
+      guru: listGuru,
+      mapel: listMapel
+    }
+  };
+}

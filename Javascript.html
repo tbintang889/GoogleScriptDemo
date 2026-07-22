@@ -11,48 +11,70 @@
       setTimeout(() => toast.classList.add('hidden'), 3000);
     }
 
-    // --- LOGIKA UI (Navigasi) ---
-    function pindahMenu(menu) {
-  // daftar semua modul/menu
-  const modulList = [
-    'siswa','guru','nilai'
-  ];
+    // --- REGISTRY DOKUMEN & MENU (ROBUST MENU REGISTRY) ---
+    const menuRegistry = {
+      siswa: {
+        title: "Manajemen Data Siswa",
+        loader: () => typeof loadDataSiswa === 'function' && loadDataSiswa()
+      },
+      guru: {
+        title: "Manajemen Data Guru",
+        loader: () => typeof loadDataGuru === 'function' && loadDataGuru()
+      },
+      nilai: {
+        title: "Manajemen Data Nilai Siswa",
+        loader: () => typeof loadDataNilai === 'function' && loadDataNilai()
+      },
+      laporanNilai: {
+        title: "📊 Laporan Rekapitulasi Nilai Siswa",
+        loader: () => typeof loadDataLaporanNilai === 'function' && loadDataLaporanNilai()
+      }
+      // Untuk menambah menu/laporan baru di masa depan, cukup daftarkan 1 entry di sini
+      // atau panggil: registerMenu('laporanPresensi', { title: '...', loader: fn })
+    };
 
-  // sembunyikan semua modul & reset tombol
-  modulList.forEach(m => {
-    const modulEl = document.getElementById('modul' + capitalize(m));
-    const btnEl   = document.getElementById('menu' + capitalize(m) + 'Btn');
-
-    if (modulEl) modulEl.classList.add('hidden'); // aman walau null
-    if (btnEl) {
-      btnEl.className =
-        "w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-300";
+    /**
+     * Helper untuk mendaftarkan menu baru secara dinamis
+     */
+    function registerMenu(menuKey, config) {
+      menuRegistry[menuKey] = config;
     }
-  });
 
-  // tampilkan modul sesuai menu
-  const activeModul = document.getElementById('modul' + capitalize(menu));
-  const activeBtn   = document.getElementById('menu' + capitalize(menu) + 'Btn');
+    // --- LOGIKA UI (Navigasi Modul) ---
+    function pindahMenu(menu) {
+      const cfg = menuRegistry[menu];
 
-  if (activeModul) activeModul.classList.remove('hidden');
-  if (activeBtn) {
-    activeBtn.className =
-      "w-full text-left px-4 py-3 rounded-lg bg-blue-600 text-white";
-  }
+      // Sembunyikan semua modul yang terdaftar & reset style tombol sidebar
+      Object.keys(menuRegistry).forEach(mKey => {
+        const modulEl = document.getElementById('modul' + capitalize(mKey));
+        const btnEl   = document.getElementById('menu' + capitalize(mKey) + 'Btn');
 
-  // ubah judul header
-  const headerTitle = document.getElementById('headerTitle');
-  if (headerTitle) headerTitle.innerText = "Manajemen Data " + capitalize(menu);
+        if (modulEl) modulEl.classList.add('hidden');
+        if (btnEl) {
+          btnEl.className = "w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors";
+        }
+      });
 
-  // mapping loader sesuai menu
-  const loaders = {
-    siswa: loadDataSiswa,
-    guru: loadDataGuru,
-    nilai: loadDataNilai
-  };
+      // Tampilkan modul aktif & aktifkan style tombol sidebar
+      const activeModul = document.getElementById('modul' + capitalize(menu));
+      const activeBtn   = document.getElementById('menu' + capitalize(menu) + 'Btn');
 
-  if (loaders[menu]) loaders[menu](); // panggil loader kalau ada
-}
+      if (activeModul) activeModul.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.className = "w-full text-left px-4 py-3 rounded-lg bg-blue-600 text-white font-medium shadow-sm transition-colors";
+      }
+
+      // Ubah Judul Header secara otomatis sesuai registrasi menu
+      const headerTitle = document.getElementById('headerTitle');
+      if (headerTitle && cfg) {
+        headerTitle.innerText = cfg.title || ("Manajemen Data " + capitalize(menu));
+      }
+
+      // Jalankan fungsi loader jika terdaftar
+      if (cfg && typeof cfg.loader === 'function') {
+        cfg.loader();
+      }
+    }
 
 // helper untuk kapitalisasi
 function capitalize(str) {
@@ -494,5 +516,123 @@ function capitalize(str) {
           loadDataNilai();
         }).deleteNilai(id);
       }
+    }
+  </script>
+
+  <script>
+    // --- LOGIKA MODUL LAPORAN NILAI (READ ONLY + FILTER & STATISTIK) ---
+    let rawLaporanData = [];
+
+    function loadDataLaporanNilai() {
+      const tbody = document.getElementById('tabelLaporanNilai');
+      tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">Memuat data laporan...</td></tr>';
+
+      google.script.run.withSuccessHandler(res => {
+        if (!res) return;
+        rawLaporanData = res.data || [];
+        populateFilterLaporanOptions(res.filterOptions);
+        renderLaporanTable(rawLaporanData);
+      }).getLaporanNilai();
+    }
+
+    function populateFilterLaporanOptions(opts) {
+      if (!opts) return;
+
+      const selMapel = document.getElementById('filterLaporanMapel');
+      const selGuru  = document.getElementById('filterLaporanGuru');
+      const selSiswa = document.getElementById('filterLaporanSiswa');
+
+      // Mapel
+      let mapelHtml = '<option value="">-- Semua Mata Pelajaran --</option>';
+      opts.mapel.forEach(m => {
+        mapelHtml += `<option value="${m}">${m}</option>`;
+      });
+      selMapel.innerHTML = mapelHtml;
+
+      // Guru
+      let guruHtml = '<option value="">-- Semua Guru --</option>';
+      opts.guru.forEach(g => {
+        guruHtml += `<option value="${g.id}">${g.nama}</option>`;
+      });
+      selGuru.innerHTML = guruHtml;
+
+      // Siswa
+      let siswaHtml = '<option value="">-- Semua Siswa --</option>';
+      opts.siswa.forEach(s => {
+        siswaHtml += `<option value="${s.id}">${s.nama}</option>`;
+      });
+      selSiswa.innerHTML = siswaHtml;
+    }
+
+    function renderLaporanTable(dataList) {
+      const tbody = document.getElementById('tabelLaporanNilai');
+      tbody.innerHTML = '';
+
+      // Update Statistik Cards
+      const total = dataList.length;
+      document.getElementById('statTotalPenilaian').innerText = total;
+
+      if (total === 0) {
+        document.getElementById('statRataRata').innerText = "0";
+        document.getElementById('statTertinggi').innerText = "0";
+        document.getElementById('statTerendah').innerText = "0";
+
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">Data laporan tidak ditemukan.</td></tr>';
+        return;
+      }
+
+      let sum = 0;
+      let max = dataList[0].nilai;
+      let min = dataList[0].nilai;
+
+      dataList.forEach((item, index) => {
+        const val = Number(item.nilai);
+        sum += val;
+        if (val > max) max = val;
+        if (val < min) min = val;
+
+        let badgeColor = 'bg-slate-100 text-slate-700';
+        if (item.predikat.startsWith('A')) badgeColor = 'bg-emerald-100 text-emerald-700 font-semibold';
+        else if (item.predikat.startsWith('B')) badgeColor = 'bg-blue-100 text-blue-700 font-semibold';
+        else if (item.predikat.startsWith('C')) badgeColor = 'bg-amber-100 text-amber-700 font-semibold';
+        else if (item.predikat.startsWith('D')) badgeColor = 'bg-red-100 text-red-700 font-semibold';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 border-b">
+            <td class="py-3 px-4 text-center font-medium text-slate-500">${index + 1}</td>
+            <td class="py-3 px-4 font-medium text-slate-800">${item.namaSiswa}</td>
+            <td class="py-3 px-4 text-slate-700"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${item.mapel}</span></td>
+            <td class="py-3 px-4 text-slate-700">${item.namaGuru}</td>
+            <td class="py-3 px-4 text-center font-bold text-slate-800">${item.nilai}</td>
+            <td class="py-3 px-4 text-center"><span class="px-2.5 py-1 rounded-full text-xs ${badgeColor}">${item.predikat}</span></td>
+          </tr>`;
+      });
+
+      const avg = (sum / total).toFixed(1);
+      document.getElementById('statRataRata').innerText = avg;
+      document.getElementById('statTertinggi').innerText = max;
+      document.getElementById('statTerendah').innerText = min;
+    }
+
+    function applyFilterLaporan() {
+      const selectedMapel = document.getElementById('filterLaporanMapel').value;
+      const selectedGuru  = document.getElementById('filterLaporanGuru').value;
+      const selectedSiswa = document.getElementById('filterLaporanSiswa').value;
+
+      let filtered = rawLaporanData.filter(item => {
+        const matchMapel = selectedMapel === '' || item.mapel === selectedMapel;
+        const matchGuru  = selectedGuru  === '' || item.guruId === selectedGuru;
+        const matchSiswa = selectedSiswa === '' || item.siswaId === selectedSiswa;
+        return matchMapel && matchGuru && matchSiswa;
+      });
+
+      renderLaporanTable(filtered);
+    }
+
+    function resetFilterLaporan() {
+      document.getElementById('filterLaporanMapel').value = '';
+      document.getElementById('filterLaporanGuru').value = '';
+      document.getElementById('filterLaporanSiswa').value = '';
+      renderLaporanTable(rawLaporanData);
     }
   </script>
