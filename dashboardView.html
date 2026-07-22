@@ -1,0 +1,183 @@
+<!-- ========================================== -->
+<!-- MODUL: DASHBOARD ANALITIK                  -->
+<!-- ========================================== -->
+<div id="modulDashboard" class="fade-in space-y-6">
+
+  <!-- Welcome Banner & Quick Actions -->
+  <div class="bg-gradient-to-r from-slate-900 via-indigo-900 to-blue-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-medium mb-3 backdrop-blur-sm">
+        <span>👋 Sistem Informasi Akademik SIAKAD</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Selamat Datang di Panel Utama!</h2>
+      <p class="text-slate-300 text-sm mt-1.5 max-w-xl">Ringkasan performa akademik, statistik siswa, guru, dan grafik penilaian sekolah secara real-time.</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="flex flex-wrap gap-2.5 w-full md:w-auto">
+      <button onclick="pindahMenu('siswa')" class="bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl backdrop-blur-md border border-white/10 transition">
+        ➕ Tambah Siswa
+      </button>
+      <button onclick="pindahMenu('nilai')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg transition">
+        📝 Input Nilai
+      </button>
+      <button onclick="pindahMenu('laporanNilai')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg transition">
+        📊 Lihat Laporan
+      </button>
+    </div>
+  </div>
+
+  <!-- 1. KPI Cards Row -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <!-- Card Siswa -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm flex items-center justify-between hover:shadow-md transition">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Siswa</p>
+        <h3 id="dashTotalSiswa" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+        <span class="text-xs text-blue-600 font-medium">Terdaftar di sistem</span>
+      </div>
+      <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-inner">
+        🏫
+      </div>
+    </div>
+
+    <!-- Card Guru -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm flex items-center justify-between hover:shadow-md transition">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Guru</p>
+        <h3 id="dashTotalGuru" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+        <span class="text-xs text-indigo-600 font-medium">Tenaga Pendidik</span>
+      </div>
+      <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl shadow-inner">
+        👨‍🏫
+      </div>
+    </div>
+
+    <!-- Card Mapel -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm flex items-center justify-between hover:shadow-md transition">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Mata Pelajaran</p>
+        <h3 id="dashTotalMapel" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+        <span class="text-xs text-amber-600 font-medium">Kurikulum Aktif</span>
+      </div>
+      <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl shadow-inner">
+        📚
+      </div>
+    </div>
+
+    <!-- Card Rata Rata Nilai -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm flex items-center justify-between hover:shadow-md transition">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Rata-Rata Nilai</p>
+        <h3 id="dashAvgNilai" class="text-3xl font-bold text-emerald-600 mt-1">0</h3>
+        <span id="dashAvgBadge" class="text-xs text-emerald-600 font-medium">Performa Sekolah</span>
+      </div>
+      <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-inner">
+        📈
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Charts Grid (4 Interactive Charts) -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Chart 1: Distribusi Siswa per Jurusan -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-800">🍩 Distribusi Siswa per Jurusan</h4>
+          <p class="text-xs text-slate-400">Komposisi jumlah siswa berdasarkan jurusan</p>
+        </div>
+      </div>
+      <div class="relative h-64 flex justify-center items-center">
+        <canvas id="chartJurusan"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 2: Rata-Rata Nilai per Mapel -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-800">📊 Rata-Rata Nilai per Mata Pelajaran</h4>
+          <p class="text-xs text-slate-400">Perbandingan pencapaian rata-rata tiap mapel</p>
+        </div>
+      </div>
+      <div class="relative h-64">
+        <canvas id="chartMapel"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 3: Distribusi Predikat Nilai -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-800">🎯 Proporsi Predikat Kelulusan</h4>
+          <p class="text-xs text-slate-400">Persentase predikat A, B, C, dan D</p>
+        </div>
+      </div>
+      <div class="relative h-64 flex justify-center items-center">
+        <canvas id="chartPredikat"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 4: Aktivitas Penilaian Guru -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-800">👨‍🏫 Aktivitas Input Nilai per Guru</h4>
+          <p class="text-xs text-slate-400">Jumlah entri penilaian oleh masing-masing guru</p>
+        </div>
+      </div>
+      <div class="relative h-64">
+        <canvas id="chartGuru"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 3. Leaderboard & Recent Activities Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Top 5 Siswa Berprestasi (Leaderboard) -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm lg:col-span-1">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-800">⭐ Top 5 Siswa Berprestasi</h4>
+          <p class="text-xs text-slate-400">Siswa dengan rata-rata nilai tertinggi</p>
+        </div>
+      </div>
+      <div id="dashLeaderboard" class="space-y-3">
+        <p class="text-xs text-slate-400 text-center py-4">Memuat data leaderboard...</p>
+      </div>
+    </div>
+
+    <!-- 5 Penilaian Terbaru -->
+    <div class="bg-white p-6 rounded-2xl border shadow-sm lg:col-span-2">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-800">🕒 Aktivitas Penilaian Terbaru</h4>
+          <p class="text-xs text-slate-400">5 entri penilaian siswa yang baru dimasukkan</p>
+        </div>
+        <button onclick="pindahMenu('nilai')" class="text-xs text-blue-600 hover:underline font-medium">Kelola Nilai &rarr;</button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+            <tr>
+              <th class="py-2.5 px-3">Siswa</th>
+              <th class="py-2.5 px-3">Mata Pelajaran</th>
+              <th class="py-2.5 px-3 text-center">Nilai</th>
+              <th class="py-2.5 px-3 text-center">Predikat</th>
+            </tr>
+          </thead>
+          <tbody id="dashRecentNilai" class="divide-y divide-slate-100 text-sm">
+            <tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">Memuat penilaian terbaru...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
