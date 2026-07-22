@@ -53,26 +53,32 @@ Pastikan Anda telah memasang:
 | `dashboard.js` | Analitik dashboard |
 
 ### Client-Side Views (`.html`)
+Struktur view kini dikelompokkan ke folder agar lebih rapi dan siap dipakai sebagai starter template:
+- `views/layout/` → layout utama, head, sidebar, login wrapper
+- `views/auth/` → form login
+- `views/modules/` → view untuk dashboard, siswa, guru, mapel, nilai, laporan
+- `views/scripts/` → orchestrator, helper, core, dan modul fitur
+
 | File | Keterangan |
 |---|---|
-| `Index.html` | Layout utama |
-| `Head.html` | CDN TailwindCSS, Chart.js, dan font |
-| `Login.html` | Form login |
-| `Aside.html` | Sidebar navigasi |
-| `SiswaView.html` | Form CRUD siswa |
-| `GuruView.html` | Form CRUD guru |
-| `MapelView.html` | Form CRUD mapel |
-| `NilaiView.html` | Form CRUD nilai |
-| `laporanNilaiView.html` | Laporan read-only |
-| `dashboardView.html` | Dashboard analitik |
-| `Javascript.html` | Orchestrator include untuk logika client-side modular |
-| `JavascriptHelper.html` | Helper UI dan fungsi shared seperti toast dan gasRun |
-| `JavascriptCore.html` | Registrasi menu dan navigasi antar modul |
-| `JavascriptLogin.html` | Flow login dan logout |
-| `JavascriptCrud.html` | CRUD generik untuk entitas utama |
-| `JavascriptNilai.html` | Modul nilai dan filter data penilaian |
-| `JavascriptLaporan.html` | Modul laporan dan statistik read-only |
-| `JavascriptDashboard.html` | Dashboard analitik, chart, KPI, leaderboard |
+| `views/layout/Index.html` | Layout utama |
+| `views/layout/Head.html` | CDN TailwindCSS, Chart.js, dan font |
+| `views/auth/Login.html` | Form login |
+| `views/layout/Aside.html` | Sidebar navigasi |
+| `views/modules/SiswaView.html` | Form CRUD siswa |
+| `views/modules/GuruView.html` | Form CRUD guru |
+| `views/modules/MapelView.html` | Form CRUD mapel |
+| `views/modules/NilaiView.html` | Form CRUD nilai |
+| `views/modules/laporanNilaiView.html` | Laporan read-only |
+| `views/modules/dashboardView.html` | Dashboard analitik |
+| `views/scripts/Javascript.html` | Orchestrator include untuk logika client-side modular |
+| `views/scripts/helper/JavascriptHelper.html` | Helper UI dan fungsi shared seperti toast dan gasRun |
+| `views/scripts/core/JavascriptCore.html` | Registrasi menu dan navigasi antar modul |
+| `views/scripts/modules/login/JavascriptLogin.html` | Flow login dan logout |
+| `views/scripts/modules/crud/JavascriptCrud.html` | CRUD generik untuk entitas utama |
+| `views/scripts/modules/nilai/JavascriptNilai.html` | Modul nilai dan filter data penilaian |
+| `views/scripts/modules/laporan/JavascriptLaporan.html` | Modul laporan dan statistik read-only |
+| `views/scripts/modules/dashboard/JavascriptDashboard.html` | Dashboard analitik, chart, KPI, leaderboard |
 
 ---
 

@@ -33,6 +33,7 @@ Target modul utama:
 - [x] File template default disiapkan sebagai acuan pemisahan modul
 - [x] Bagian frontend dipisah ke modul modular: helper, core, login, CRUD, nilai, laporan, dashboard
 - [x] File utama Javascript.html kini berperan sebagai orchestrator include untuk modul modular
+- [x] Struktur view dipindah ke folder terorganisir: layout, auth, modules, scripts
 
 ### Belum / prioritas berikutnya
 - [ ] Menyusun default starter bundle yang lebih rapi untuk copy-paste ke project baru
@@ -84,12 +85,12 @@ Target modul utama:
 ## 4. Struktur Template Target
 
 ### Core / inti
-- [ ] Code.js → entry point, setup config, helper umum, autentikasi
-- [ ] _helper.js → fungsi reusable seperti hitung predikat, formatter, validasi umum
-- [ ] Head.html → CDN dan layout global
-- [ ] Login.html → form login standar
-- [ ] Aside.html → sidebar navigasi
-- [ ] Index.html → layout utama dan include komponen
+- [x] Code.js → entry point, setup config, helper umum, autentikasi
+- [x] _helper.js → fungsi reusable seperti hitung predikat, formatter, validasi umum
+- [x] views/layout/Head.html → CDN dan layout global
+- [x] views/auth/Login.html → form login standar
+- [x] views/layout/Aside.html → sidebar navigasi
+- [x] views/layout/Index.html → layout utama dan include komponen
 
 ### Modul utama
 - [ ] Login module → login, logout, session state
