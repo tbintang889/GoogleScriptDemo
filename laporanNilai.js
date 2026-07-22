@@ -29,15 +29,35 @@ function getLaporanNilai() {
   if (dataGuru.length > 0) dataGuru.shift();
   var guruMap = {};
   var listGuru = [];
-  var setMapel = {};
   dataGuru.forEach(function(row) {
     var id = row[0].toString();
     var namaGuru = row[1];
     var mapel = row[2];
     guruMap[id] = { nama: namaGuru, mapel: mapel };
     listGuru.push({ id: id, nama: namaGuru });
-    if (mapel && mapel.trim() !== "") setMapel[mapel.trim()] = true;
   });
+
+  // 3. Ambil Data Mapel dari Sheet Mapel untuk Filter
+  var sheetMapel = getSheet("Mapel");
+  var dataMapel = sheetMapel ? sheetMapel.getDataRange().getValues() : [];
+  if (dataMapel.length > 0) dataMapel.shift();
+  
+  var setMapel = {};
+  dataMapel.forEach(function(row) {
+    var namaMapel = row[1];
+    if (namaMapel && namaMapel.toString().trim() !== "") {
+      setMapel[namaMapel.toString().trim()] = true;
+    }
+  });
+
+  // Jika Sheet Mapel kosong, fallback mengambil mapel dari data Guru
+  if (Object.keys(setMapel).length === 0) {
+    dataGuru.forEach(function(row) {
+      if (row[2] && row[2].toString().trim() !== "") {
+        setMapel[row[2].toString().trim()] = true;
+      }
+    });
+  }
 
   var listMapel = Object.keys(setMapel).sort();
 
