@@ -1,44 +1,61 @@
-// File: Siswa.gs
-// Pastikan tidak ada fungsi getSpreadsheet() di sini, kita pakai getSheet() dari Code.gs
+// File: Siswa.js
 
 function getSiswa() {
-  var sheet = getSheet("Siswa");
+  var sheet = getSheet('Siswa');
   if (!sheet) return [];
   var data = sheet.getDataRange().getValues();
-  if (data.length > 0) data.shift(); // Hapus baris header
+  if (data.length > 0) data.shift();
   return data;
 }
 
 function createSiswa(obj) {
-  var sheet = getSheet("Siswa");
-  var id = generateId("S");
-  sheet.appendRow([id, obj.nama, obj.kelas, obj.jurusan]);
-  return "Data Siswa berhasil ditambahkan!";
+  try {
+    if (!obj || !String(obj.nama || '').trim()) {
+      return { success: false, message: 'Nama siswa tidak boleh kosong.' };
+    }
+    var sheet = ensureSheet('Siswa', ['ID', 'Nama', 'Kelas', 'Jurusan']);
+    var id = generateId('S');
+    sheet.appendRow([id, String(obj.nama || '').trim(), String(obj.kelas || '').trim(), String(obj.jurusan || '').trim()]);
+    return { success: true, message: 'Data Siswa berhasil ditambahkan!' };
+  } catch (error) {
+    return { success: false, message: 'Gagal menambah siswa: ' + error.message };
+  }
 }
 
 function updateSiswa(obj) {
-  var sheet = getSheet("Siswa");
-  var data = sheet.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0].toString() === obj.id.toString()) {
-      var rowIndex = i + 1; 
-      sheet.getRange(rowIndex, 2).setValue(obj.nama);   
-      sheet.getRange(rowIndex, 3).setValue(obj.kelas);  
-      sheet.getRange(rowIndex, 4).setValue(obj.jurusan); 
-      return "Data Siswa berhasil diperbarui!";
+  try {
+    if (!obj || !String(obj.id || '').trim()) {
+      return { success: false, message: 'ID siswa tidak valid.' };
     }
+    var sheet = ensureSheet('Siswa', ['ID', 'Nama', 'Kelas', 'Jurusan']);
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0] || '').toString() === String(obj.id || '').toString()) {
+        var rowIndex = i + 1;
+        sheet.getRange(rowIndex, 2).setValue(String(obj.nama || '').trim());
+        sheet.getRange(rowIndex, 3).setValue(String(obj.kelas || '').trim());
+        sheet.getRange(rowIndex, 4).setValue(String(obj.jurusan || '').trim());
+        return { success: true, message: 'Data Siswa berhasil diperbarui!' };
+      }
+    }
+    return { success: false, message: 'Siswa tidak ditemukan.' };
+  } catch (error) {
+    return { success: false, message: 'Gagal memperbarui siswa: ' + error.message };
   }
-  return "Siswa tidak ditemukan.";
 }
 
 function deleteSiswa(id) {
-  var sheet = getSheet("Siswa");
-  var data = sheet.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0].toString() === id.toString()) {
-      sheet.deleteRow(i + 1);
-      return "Data Siswa berhasil dihapus!";
+  try {
+    var sheet = ensureSheet('Siswa', ['ID', 'Nama', 'Kelas', 'Jurusan']);
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0] || '').toString() === String(id || '').toString()) {
+        sheet.deleteRow(i + 1);
+        return { success: true, message: 'Data Siswa berhasil dihapus!' };
+      }
     }
+    return { success: false, message: 'Siswa tidak ditemukan.' };
+  } catch (error) {
+    return { success: false, message: 'Gagal menghapus siswa: ' + error.message };
   }
-  return "Siswa tidak ditemukan.";
 }
