@@ -8,6 +8,10 @@ SIAKAD adalah aplikasi web SPA berbasis Google Apps Script dan TailwindCSS yang 
 
 Versi saat ini telah diperbaiki untuk menjadi lebih aman, lebih rapi, dan lebih siap dijadikan template untuk proyek GAS berikutnya:
 
+- **`ReferenceError: require is not defined` telah diperbaiki.** File `generate-crud.js` kini memiliki guard clause yang mencegah eksekusi `require('fs')` dan `require('path')` di lingkungan GAS. File juga ditambahkan secara eksplisit ke `.claspignore`.
+- **Siswa-Jurusan dynamic dropdown.** Dropdown jurusan di form siswa kini terisi otomatis dari data sheet Jurusan via fungsi `getOptionsJurusan()`.
+- **CLI tool baru: `update-crud-link.js`** untuk menghubungkan dropdown dinamis antar entitas CRUD secara otomatis.
+- **Entitas Jurusan** telah ditambahkan sebagai modul CRUD lengkap (server, view, konfigurasi, sidebar, menu registry).
 - Konfigurasi spreadsheet kini tidak lagi hardcoded di kode, melainkan disimpan melalui PropertiesService.
 - CRUD server-side kini mengembalikan respons objek `{ success, message }` yang konsisten.
 - Validasi sisi server ditambahkan untuk mencegah input kosong atau tidak valid.
@@ -27,7 +31,11 @@ Versi saat ini telah diperbaiki untuk menjadi lebih aman, lebih rapi, dan lebih 
    - [Langkah 4: Deploy Web App](#langkah-4-deploy-web-app)
 4. [🔄 Alur Sistem](#-alur-sistem)
 5. [🛠️ Panduan Clasp](#%EF%B8%8F-panduan-clasp-command-line-apps-script-projects)
-6. [🚀 Panduan Git](#-panduan-git)
+6. [🎯 Dynamic Form Components & Data Binding](#-dynamic-form-components--data-binding)
+7. [🔗 CRUD Link Generator CLI](#-crud-link-generator-cli-dropdown-dinamis)
+8. [🤖 CRUD Generator CLI (Otomatis)](#-crud-generator-cli-otomatis)
+9. [📖 Tutorial CRUD Manual](#-tutorial-cara-menambah-menu-crud-baru-manual)
+10. [🚀 Panduan Git](#-panduan-git)
 
 ---
 
@@ -51,12 +59,13 @@ Pastikan Anda telah memasang:
 | `Nilai.js` | CRUD nilai dan JOIN data siswa/guru |
 | `laporanNilai.js` | Laporan rekapitulasi nilai |
 | `dashboard.js` | Analitik dashboard |
+| `Jurusan.js` | CRUD data jurusan |
 
 ### Client-Side Views (`.html`)
 Struktur view kini dikelompokkan ke folder agar lebih rapi dan siap dipakai sebagai starter template:
 - `views/layout/` → layout utama, head, sidebar, login wrapper
 - `views/auth/` → form login
-- `views/modules/` → view untuk dashboard, siswa, guru, mapel, nilai, laporan
+- `views/modules/` → view untuk dashboard, siswa, guru, mapel, nilai, laporan, jurusan
 - `views/scripts/` → orchestrator, helper, core, dan modul fitur
 
 | File | Keterangan |
@@ -78,11 +87,6 @@ Struktur view kini dikelompokkan ke folder agar lebih rapi dan siap dipakai seba
 | `views/scripts/modules/crud/JavascriptCrud.html` | CRUD generik untuk entitas utama |
 | `views/scripts/modules/nilai/JavascriptNilai.html` | Modul nilai dan filter data penilaian |
 | `views/scripts/modules/laporan/JavascriptLaporan.html` | Modul laporan dan statistik read-only |
-| `views/scripts/modules/dashboard/JavascriptDashboard.html` | Dashboard analitik, chart, KPI, leaderboard |
-
----
-
-## 🔌 Cara Pakai & Instalasi
 
 ### Langkah 1: Setup Google Sheets (Database)
 Buat spreadsheet baru di Google Drive dan tambahkan sheet berikut:
@@ -148,56 +152,369 @@ clasp open
 
 ### ⚠️ Penting: File Development Jangan Sampai Ter-Push
 
-File development seperti `generate-crud.js`, `README.md`, `TEMPLATE_NOTES.md`, dan `.gitignore` sudah otomatis **dikecualikan** dari push via file `.claspignore`. Ini mencegah error seperti `ReferenceError: require is not defined` jika file Node.js ikut ter-push ke Apps Script.
+File development seperti `generate-crud.js`, `README.md`, `TEMPLATE_NOTES.md`, dan `.gitignore` sudah otomatis **dikecualikan** dari push via file `.claspignore`. Ini mencegah file-file tersebut ikut ter-push ke Apps Script.
 
-Jika Anda menambah file development baru, tambahkan pattern-nya ke `.claspignore`:
+---
+
+## 🎯 Dynamic Form Components & Data Binding
+
+SIAKAD mendukung pengisian komponen form (dropdown, radio, tabel) secara **dinamis dari data di Google Sheets**. Artinya, data yang ditampilkan di form bukan hardcoded, melainkan diambil langsung dari entitas terkait (misal: dropdown Mapel di form Guru diambil dari data sheet "Mapel").
+
+---
+
+### 1. Dynamic Dropdown (Select) — Panduan Lengkap
+
+Dropdown dinamis adalah pola utama yang digunakan untuk menghubungkan data antar entitas. Contoh paling jelas: **dropdown Mata Pelajaran di form Guru** yang datanya diambil dari sheet "Mapel".
+
+#### 🏗️ Arsitektur Pola Dropdown Dinamis
+
 ```
-**/skrip-anda.js
-**/folder-dev/*
+[Google Sheet "Mapel"] 
+        ↓ (dibaca server)
+[Server: Mapel.js → getOptionsMapel()]
+        ↓ (via google.script.run)
+[Client: populateGuruMapelDropdown() → isi <select id="guru_mapel">]
+        ↓
+[User memilih Mapel → Simpan → createGuru(obj) → sheet "Guru" kolom Mapel]
+```
+
+#### 🔍 Contoh 1: Dropdown Mapel di Form Guru
+
+**A. Server-Side — Fungsi `getOptionsMapel()` di `Mapel.js`**
+```javascript
+/**
+ * Helper untuk mengambil opsi nama mapel (digunakan di dropdown Form Guru)
+ */
+function getOptionsMapel() {
+  var sheet = getSheet('Mapel');                  // Baca sheet "Mapel"
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  if (data.length > 0) data.shift();              // Hapus baris header
+  return data.map(function(r) {
+    return { id: r[0], nama: r[1], kode: r[2] }; // Return array objek
+  });
+}
+```
+
+**B. Client-Side — Fungsi `populateGuruMapelDropdown()`**
+```javascript
+function loadDataGuru() {
+  populateGuruMapelDropdown();  // Isi dropdown DULU
+  loadData('guru');             // Lalu render tabel
+}
+
+function populateGuruMapelDropdown() {
+  google.script.run.withSuccessHandler(listMapel => {
+    const selectEl = document.getElementById('guru_mapel');
+    if (!selectEl) return;
+    const currVal = selectEl.value;               // Simpan pilihan user sebelumnya
+
+    let html = '<option value="">-- Pilih Mata Pelajaran --</option>';
+    if (listMapel && listMapel.length > 0) {
+      listMapel.forEach(m => {
+        html += `<option value="${m.nama}">${m.nama} (${m.kode})</option>`;
+      });
+    }
+    selectEl.innerHTML = html;                    // Render ulang <select>
+    if (currVal) selectEl.value = currVal;        // Restore pilihan
+  }).getOptionsMapel();                           // Panggil server
+}
+```
+
+**C. Konfigurasi `crudConfig` untuk Guru**
+```javascript
+guru: {
+  form: {
+    mapel: { el: 'guru_mapel', type: 'dropdown', options: ['-- Memuat Mapel --'] }
+    // options awal hanya placeholder — akan di-replace oleh populateGuruMapelDropdown()
+  },
+  // ...
+}
+```
+
+> **Penting:** Properti `options` di `crudConfig` hanya sebagai placeholder awal. Isi dropdown yang sesungguhnya berasal dari server melalui fungsi populate.
+
+---
+
+#### 🔍 Contoh 2: Dropdown Jurusan di Form Siswa
+
+Polanya **persis sama** dengan Guru-Mapel:
+
+**A. Server — `getOptionsJurusan()` di `Jurusan.js`**
+```javascript
+function getOptionsJurusan() {
+  var sheet = getSheet('Jurusan');
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  if (data.length > 0) data.shift();
+  return data.map(function(r) {
+    return { id: r[0], nama: r[1], kode: r[2] };
+  });
+}
+```
+
+**B. Client — `populateSiswaJurusanDropdown()`**
+```javascript
+function loadDataSiswa() {
+  populateSiswaJurusanDropdown();  // Isi dropdown jurusan
+  loadData('siswa');               // Lalu render tabel
+}
+
+function populateSiswaJurusanDropdown() {
+  google.script.run.withSuccessHandler(listJurusan => {
+    const selectEl = document.getElementById('siswa_jurusan');
+    if (!selectEl) return;
+    const currVal = selectEl.value;
+
+    let html = '<option value="">-- Pilih Jurusan --</option>';
+    if (listJurusan && listJurusan.length > 0) {
+      listJurusan.forEach(j => {
+        html += `<option value="${j.nama}">${j.nama}</option>`;
+      });
+    }
+    selectEl.innerHTML = html;
+    if (currVal) selectEl.value = currVal;
+  }).getOptionsJurusan();
+}
+```
+
+**C. Konfigurasi `crudConfig` untuk Siswa**
+```javascript
+siswa: {
+  form: {
+    jurusan: { el: 'siswa_jurusan', type: 'dropdown', options: ['-- Memuat Jurusan --'] }
+    // Akan di-replace oleh populateSiswaJurusanDropdown()
+  },
+  // ...
+}
 ```
 
 ---
 
-🤖 CRUD Generator CLI (Otomatis)
+#### 📋 Checklist Membuat Dropdown Dinamis Baru
 
-Kami menyediakan **CLI Generator** yang bisa membuat seluruh menu CRUD baru secara otomatis dalam satu perintah.
-
-### Cara Pakai
-
-```bash
-# Generate CRUD entitas baru (default: field nama + kode)
-node generate-crud.js Jurusan
-
-# Generate dengan field kustom
-node generate-crud.js Kelas --fields nama:text,tingkat:dropdown:10,11,12
-
-# Generate dengan opsi lengkap
-node generate-crud.js Ruangan --prefix RG --icon 🏠 --title "Manajemen Ruangan"
-
-# Dry-run (lihat yang akan dibuat tanpa perubahan)
-node generate-crud.js Jurusan --dry-run
-
-# Lihat bantuan
-node generate-crud.js --help
-```
-
-### Apa yang dilakukan generator?
-
-| # | File | Aksi |
-|---|------|------|
-| 1 | `Entitas.js` | **Buat** file server-side (get, create, update, delete) |
-| 2 | `views/modules/EntitasView.html` | **Buat** template view (form + tabel) |
-| 3 | `JavascriptCrud.html` | **Update** `crudConfig` + wrapper functions |
-| 4 | `JavascriptCore.html` | **Update** `menuRegistry` |
-| 5 | `Aside.html` | **Update** sidebar button |
-| 6 | `Index.html` | **Update** include view |
-| 7 | `Code.js` | **Update** path mapping |
-
-> **Catatan:** Generator ini bekerja dengan membaca dan memodifikasi file yang sudah ada. Pastikan struktur file proyek sesuai dengan template SIAKAD.
+| Langkah | File | Yang Dilakukan |
+|---------|------|----------------|
+| 1 | `NamaEntitas.js` | Buat fungsi `getOptionsNamaEntitas()` yang return `[{ id, nama, ... }]` |
+| 2 | `JavascriptCrud.html` | Buat fungsi `populateXxxDropdown()` yang panggil `google.script.run.getOptionsNamaEntitas()` |
+| 3 | `JavascriptCrud.html` | Panggil `populateXxxDropdown()` di dalam fungsi `loadDataXxx()` **sebelum** `loadData('xxx')` |
+| 4 | `JavascriptCrud.html` | Ubah `options` di `crudConfig` jadi placeholder `['-- Memuat Xxx --']` |
 
 ---
 
-📖 Tutorial: Cara Menambah Menu CRUD Baru (Manual)
+### 2. Dynamic Radio Buttons
+
+Radio button saat ini masih menggunakan opsi hardcoded di `crudConfig`:
+
+```javascript
+kelas: { el: 'siswa_kelas', type: 'radio', options: ['XI', 'XII'] }
+```
+
+Untuk membuat radio dinamis, gunakan pola yang sama seperti dropdown:
+
+```javascript
+function loadDataSiswa() {
+  populateSiswaKelasRadio();
+  populateSiswaJurusanDropdown();
+  loadData('siswa');
+}
+
+function populateSiswaKelasRadio() {
+  google.script.run.withSuccessHandler(listKelas => {
+    const container = document.querySelector('input[name="siswa_kelas"]')?.closest('.mb-3');
+    if (!container) return;
+
+    // Simpan nilai yang sedang dipilih
+    const checked = document.querySelector('input[name="siswa_kelas"]:checked');
+    const currVal = checked ? checked.value : '';
+
+    // Render ulang radio berdasarkan data dari server
+    container.innerHTML = listKelas.map(opt =>
+      `<label><input type="radio" name="siswa_kelas" value="${opt}" ${currVal === opt ? 'checked' : ''}> ${opt}</label>`
+    ).join(' ');
+  }).getOptionsKelas();
+}
+```
+
+**Server-side:**
+```javascript
+function getOptionsKelas() {
+  var sheet = getSheet('Kelas');
+  if (!sheet) return ['XI', 'XII']; // Fallback hardcoded
+  var data = sheet.getDataRange().getValues();
+  if (data.length > 0) data.shift();
+  return data.map(function(r) { return r[0]; });
+}
+```
+
+---
+
+### 3. Dynamic Tables / View Data
+
+Semua tabel di SIAKAD dirender secara dinamis menggunakan pola `loadData()` → `renderTable()`.
+
+#### 🔄 Alur Render Tabel
+
+```
+loadData('guru')
+    ↓
+Set tbody → "Memuat..."
+    ↓
+google.script.run.getGuru()   → Server membaca sheet "Guru"
+    ↓
+renderTable('guru', data)      → Client render baris <tr>
+    ↓
+Loop data → render kolom sesuai tableColumns → tambah tombol Edit/Hapus
+```
+
+#### Konfigurasi `tableColumns`
+
+```javascript
+guru: {
+  tableColumns: [
+    { label: 'ID', key: 0 },       // Kolom 0 dari array data
+    { label: 'Nama', key: 1 },     // Kolom 1
+    { label: 'Mapel', key: 2 }     // Kolom 2 (No HP tidak ditampilkan)
+  ]
+}
+```
+
+> Properti `key` adalah index array 2D yang dikembalikan server. Anda bisa **menyembunyikan kolom** tertentu dengan tidak mencantumkannya di `tableColumns`.
+
+#### Fungsi `renderTable()` — Cara Kerja
+
+```javascript
+function renderTable(entity, data) {
+  const cfg = crudConfig[entity];
+  const tbody = document.getElementById(cfg.tableId);
+  tbody.innerHTML = '';
+
+  if(data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="99">Data kosong.</td></tr>';
+    return;
+  }
+
+  data.forEach(row => {
+    let cells = '';
+    cfg.tableColumns.forEach(col => {
+      const val = row[col.key] !== undefined ? row[col.key] : '';
+      cells += `<td>${val}</td>`;
+    });
+
+    tbody.innerHTML += `
+      <tr>
+        ${cells}
+        <td>
+          <button onclick="editData('${entity}','${row.join("','")}')">Edit</button>
+          <button onclick="hapusData('${entity}','${row[0]}')">Hapus</button>
+        </td>
+      </tr>`;
+  });
+}
+```
+
+---
+
+### 4. Dynamic Filter Dropdowns (Laporan & Nilai)
+
+Modul **Nilai** dan **Laporan Nilai** menggunakan filter dropdown yang diisi dinamis dari server.
+
+#### Contoh: Filter di Modul Nilai
+
+```javascript
+function loadDataNilai() {
+  // 1. Isi dropdown filter dari server
+  google.script.run.withSuccessHandler(populateOptionsSiswaDanGuru).getOptionsSiswaDanGuru();
+  // 2. Load data tabel
+  google.script.run.withSuccessHandler(res => {
+    rawNilaiData = res || [];
+    renderTabelNilai(rawNilaiData);
+  }).getNilai();
+}
+
+function populateOptionsSiswaDanGuru(res) {
+  // res.siswa → isi dropdown siswa (form & filter)
+  // res.guru  → isi dropdown guru (form & filter)
+  document.getElementById('filterBySiswa').innerHTML =
+    '<option value="">-- Semua Siswa --</option>' +
+    res.siswa.map(s => `<option value="${s.id}">${s.nama}</option>`).join('');
+  document.getElementById('filterByGuru').innerHTML =
+    '<option value="">-- Semua Guru --</option>' +
+    res.guru.map(g => `<option value="${g.id}">${g.nama}</option>`).join('');
+}
+```
+
+#### Flow Filter Data
+
+```
+User pilih filter → onchange="filterTabelNilai()"
+    ↓
+filterTabelNilai() baca nilai dropdown filter
+    ↓
+Filter rawNilaiData berdasarkan siswaId & guruId
+    ↓
+renderTabelNilai(filtered) → tampilkan hasil
+```
+
+---
+
+### 5. Data Flow Diagram End-to-End
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    GOOGLE SHEETS                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │ Siswa    │  │ Guru     │  │ Mapel    │  │ Jurusan │ │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬────┘ │
+└───────┼──────────────┼─────────────┼──────────────┼──────┘
+        │              │             │              │
+        ▼              ▼             ▼              ▼
+┌─────────────────────────────────────────────────────────┐
+│              SERVER-SIDE (GAS .js files)                 │
+│  Siswa.js, Guru.js, Mapel.js, Jurusan.js, Nilai.js,...  │
+│  getOptionsMapel(), getOptionsJurusan(),                 │
+│  getOptionsSiswaDanGuru(), getLaporanNilai(), dll        │
+└──────────────────────┬──────────────────────────────────┘
+                       │ google.script.run
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│              CLIENT-SIDE (Javascript*.html)              │
+│                                                          │
+│  ┌───────────────────┐  ┌─────────────────────────┐     │
+│  │ populateXxxDropdown│  │ loadData() → renderTable│     │
+│  │ (isi dropdown/    │  │ (render tabel data)     │     │
+│  │  radio dinamis)   │  │                         │     │
+│  └────────┬──────────┘  └────────────┬────────────┘     │
+│           │                          │                   │
+│           ▼                          ▼                   │
+│  ┌──────────────────────────────────────────┐           │
+│  │           KOMPONEN FORM                  │           │
+│  │  <select id="guru_mapel">               │           │
+│  │  <select id="siswa_jurusan">            │           │
+│  │  <input type="radio" name="kelas">      │           │
+│  │  <table> <tbody id="tabelGuru">         │           │
+│  │  <select id="filterBySiswa">            │           │
+│  └──────────────────────────────────────────┘           │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 6. Ringkasan Pola Data Binding
+
+| Komponen | Metode Populasi | Server Function | Client Function |
+|----------|----------------|-----------------|-----------------|
+| **Dropdown Mapel** (form Guru) | `populateGuruMapelDropdown()` | `getOptionsMapel()` di `Mapel.js` | `loadDataGuru()` |
+| **Dropdown Jurusan** (form Siswa) | `populateSiswaJurusanDropdown()` | `getOptionsJurusan()` di `Jurusan.js` | `loadDataSiswa()` |
+| **Dropdown Siswa** (form Nilai) | `getOptionsSiswaDanGuru()` | `getOptionsSiswaDanGuru()` di `Nilai.js` | `loadDataNilai()` |
+| **Dropdown Guru** (form Nilai) | Sama seperti di atas | Sama seperti di atas | Sama seperti di atas |
+| **Tabel CRUD** | `loadData('entity')` | `getEntity()` di `Entity.js` | `loadDataEntity()` |
+| **Tabel Laporan** | `loadDataLaporanNilai()` | `getLaporanNilai()` di `laporanNilai.js` | `loadDataLaporanNilai()` |
+| **Filter Laporan** | `populateFilterLaporanOptions()` | Server mengirim `filterOptions` | `applyFilterLaporan()` |
+
+> **Prinsip Utama:** Setiap kali user masuk ke menu, fungsi `loadDataXxx()` dipanggil. Fungsi ini bertanggung jawab untuk (1) mengisi dropdown/radio dari server, (2) merender tabel data. Kedua langkah ini menggunakan `google.script.run` untuk komunikasi async ke server.
+
+---
 
 Panduan ini menjelaskan langkah-langkah untuk menambahkan modul CRUD baru ke dalam aplikasi SIAKAD. Sebagai contoh, kita akan membuat entitas **Jurusan**.
 
