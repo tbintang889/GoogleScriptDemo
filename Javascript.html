@@ -21,6 +21,10 @@
         title: "Manajemen Data Guru",
         loader: () => typeof loadDataGuru === 'function' && loadDataGuru()
       },
+      mapel: {
+        title: "Manajemen Data Mata Pelajaran",
+        loader: () => typeof loadDataMapel === 'function' && loadDataMapel()
+      },
       nilai: {
         title: "Manajemen Data Nilai Siswa",
         loader: () => typeof loadDataNilai === 'function' && loadDataNilai()
@@ -138,7 +142,7 @@ const crudConfig = {
     form: { 
       id: { el:'guru_id', type:'hidden' }, 
       nama: { el:'guru_nama', type:'text', placeholder:'Nama Guru' }, 
-      mapel: { el:'guru_mapel', type:'text', placeholder:'Mata Pelajaran' }, 
+      mapel: { el:'guru_mapel', type:'dropdown', options:['-- Memuat Mapel --'] }, 
       nohp: { el:'guru_nohp', type:'text', placeholder:'No HP' } 
     },
     btnSaveId: 'btnSimpanGuru',
@@ -147,7 +151,24 @@ const crudConfig = {
     create: 'createGuru',
     update: 'updateGuru',
     delete: 'deleteGuru',
-    data: ['nama','mapel']
+    data: []
+  },
+  mapel: {
+    formWrapperId: 'formMapel',
+    tableId: 'tabelMapel',
+    titleFormId: 'titleFormMapel',
+    form: {
+      id:   { el:'mapel_id', type:'hidden' },
+      nama: { el:'mapel_nama', type:'text', placeholder:'Nama Mata Pelajaran' },
+      kode: { el:'mapel_kode', type:'text', placeholder:'Kode Mapel (misal: MTK-01)' }
+    },
+    btnSaveId: 'btnSimpanMapel',
+    btnCancelId: 'btnBatalMapel',
+    loader: ['getMapel'],
+    create: 'createMapel',
+    update: 'updateMapel',
+    delete: 'deleteMapel',
+    data: []
   }
 };
 // RENDER FORM
@@ -344,14 +365,42 @@ function capitalize(str) {
 </script>
  <script>
    // --- LOGIKA CRUD GURU ---
-  function loadDataGuru() {loadData('guru')}
-    function simpanGuru() {simpanData('guru')}
-    function editGuru() {editData('guru')}
-    function resetFormGuru() {resetForm('guru')}
-    function hapusGuru() {hapusData('guru')}
-    renderForm('guru');
+   function loadDataGuru() {
+     populateGuruMapelDropdown();
+     loadData('guru');
+   }
+   function populateGuruMapelDropdown() {
+     google.script.run.withSuccessHandler(listMapel => {
+       const selectEl = document.getElementById('guru_mapel');
+       if (!selectEl) return;
+       const currVal = selectEl.value;
+       
+       let html = '<option value="">-- Pilih Mata Pelajaran --</option>';
+       if (listMapel && listMapel.length > 0) {
+         listMapel.forEach(m => {
+           html += `<option value="${m.nama}">${m.nama} (${m.kode})</option>`;
+         });
+       }
+       selectEl.innerHTML = html;
+       if (currVal) selectEl.value = currVal;
+     }).getOptionsMapel();
+   }
+   function simpanGuru() {simpanData('guru')}
+   function editGuru() {editData('guru')}
+   function resetFormGuru() {resetForm('guru')}
+   function hapusGuru() {hapusData('guru')}
+   renderForm('guru');
+ </script>
 
-  </script>
+ <script>
+   // --- LOGIKA CRUD MAPEL ---
+   function loadDataMapel() {loadData('mapel')}
+   function simpanMapel() {simpanData('mapel')}
+   function editMapel() {editData('mapel')}
+   function resetFormMapel() {resetForm('mapel')}
+   function hapusMapel() {hapusData('mapel')}
+   renderForm('mapel');
+ </script>
 
   <script>
     // --- LOGIKA MODUL NILAI (JOIN & FILTER BY SISWA / GURU) ---
