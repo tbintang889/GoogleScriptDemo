@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Refactor: sync (git + clasp)",
+			"type": "shell",
+			"command": "git status --short; echo '---'; clasp push",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Sync modular frontend",
+			"type": "shell",
+			"command": "git status --short; echo '---'; clasp push",
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

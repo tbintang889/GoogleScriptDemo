@@ -1,0 +1,198 @@
+let chartJurusanInst = null;
+let chartMapelInst = null;
+let chartPredikatInst = null;
+let chartGuruInst = null;
+
+function loadDataDashboard() {
+  gasRun('getDashboardSummary', {}, res => {
+    if (!res) return;
+    renderDashboard(res);
+  });
+}
+
+function renderDashboard(res) {
+  if (!res) return;
+
+  document.getElementById('dashTotalSiswa').innerText = res.kpi?.totalSiswa || 0;
+  document.getElementById('dashTotalGuru').innerText = res.kpi?.totalGuru || 0;
+  document.getElementById('dashTotalMapel').innerText = res.kpi?.totalMapel || 0;
+  document.getElementById('dashAvgNilai').innerText = res.kpi?.avgNilaiSekolah || 0;
+
+  const avgBadge = document.getElementById('dashAvgBadge');
+  if (avgBadge) {
+    const avg = Number(res.kpi?.avgNilaiSekolah || 0);
+    if (avg >= 85) avgBadge.innerText = 'Sangat Baik (A)';
+    else if (avg >= 75) avgBadge.innerText = 'Baik (B)';
+    else if (avg >= 65) avgBadge.innerText = 'Cukup (C)';
+    else avgBadge.innerText = 'Perlu Bimbingan';
+  }
+
+  renderChartJurusan(res.siswaPerJurusan);
+  renderChartMapel(res.mapelStats);
+  renderChartPredikat(res.distribusiPredikat);
+  renderChartGuru(res.guruStats);
+  renderLeaderboard(res.top5Siswa);
+  renderRecentNilai(res.recentNilai);
+}
+
+function renderChartJurusan(dataObj) {
+  const ctx = document.getElementById('chartJurusan');
+  if (!ctx) return;
+  if (chartJurusanInst) chartJurusanInst.destroy();
+
+  const labels = Object.keys(dataObj || {});
+  const values = Object.values(dataObj || {});
+
+  chartJurusanInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels.length > 0 ? labels : ['Belum ada data'],
+      datasets: [{
+        data: values.length > 0 ? values : [1],
+        backgroundColor: ['#3b82f6', '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+function renderChartMapel(mapelStats) {
+  const ctx = document.getElementById('chartMapel');
+  if (!ctx) return;
+  if (chartMapelInst) chartMapelInst.destroy();
+
+  const labels = (mapelStats || []).map(item => item.mapel);
+  const values = (mapelStats || []).map(item => item.avg);
+
+  chartMapelInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.length > 0 ? labels : ['Belum ada data'],
+      datasets: [{
+        label: 'Rata-Rata Nilai',
+        data: values.length > 0 ? values : [0],
+        backgroundColor: '#3b82f6',
+        borderRadius: 8,
+        maxBarThickness: 40
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { min: 0, max: 100 } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderChartPredikat(predikatObj) {
+  const ctx = document.getElementById('chartPredikat');
+  if (!ctx) return;
+  if (chartPredikatInst) chartPredikatInst.destroy();
+
+  chartPredikatInst = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Predikat A', 'Predikat B', 'Predikat C', 'Predikat D'],
+      datasets: [{
+        data: [predikatObj?.A || 0, predikatObj?.B || 0, predikatObj?.C || 0, predikatObj?.D || 0],
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+function renderChartGuru(guruStats) {
+  const ctx = document.getElementById('chartGuru');
+  if (!ctx) return;
+  if (chartGuruInst) chartGuruInst.destroy();
+
+  const labels = (guruStats || []).map(item => item.nama);
+  const values = (guruStats || []).map(item => item.totalInput);
+
+  chartGuruInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.length > 0 ? labels : ['Belum ada data'],
+      datasets: [{
+        label: 'Jumlah Penilaian Input',
+        data: values.length > 0 ? values : [0],
+        backgroundColor: '#6366f1',
+        borderRadius: 8,
+        maxBarThickness: 35
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderLeaderboard(top5) {
+  const el = document.getElementById('dashLeaderboard');
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (!top5 || top5.length === 0) {
+    el.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Belum ada data nilai siswa.</p>';
+    return;
+  }
+
+  const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+  top5.forEach((item, i) => {
+    el.innerHTML += `
+      <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border hover:bg-slate-100 transition">
+        <div class="flex items-center gap-3">
+          <span class="text-lg">${medals[i] || '🎖️'}</span>
+          <div>
+            <h5 class="text-sm font-bold text-slate-800">${item.nama}</h5>
+            <p class="text-xs text-slate-500">${item.kelasInfo} &bull; ${item.totalMapel} Mapel</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg">${item.avg}</span>
+      </div>`;
+  });
+}
+
+function renderRecentNilai(recentList) {
+  const tbody = document.getElementById('dashRecentNilai');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!recentList || recentList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">Belum ada data penilaian terbaru.</td></tr>';
+    return;
+  }
+
+  recentList.forEach(item => {
+    let badgeColor = 'bg-slate-100 text-slate-700';
+    if (item.predikat?.startsWith('A')) badgeColor = 'bg-emerald-100 text-emerald-700 font-semibold';
+    else if (item.predikat?.startsWith('B')) badgeColor = 'bg-blue-100 text-blue-700 font-semibold';
+    else if (item.predikat?.startsWith('C')) badgeColor = 'bg-amber-100 text-amber-700 font-semibold';
+    else if (item.predikat?.startsWith('D')) badgeColor = 'bg-red-100 text-red-700 font-semibold';
+
+    tbody.innerHTML += `
+      <tr class="hover:bg-slate-50">
+        <td class="py-2.5 px-3 font-medium text-slate-800">${item.namaSiswa}</td>
+        <td class="py-2.5 px-3 text-slate-600">${item.mapel}</td>
+        <td class="py-2.5 px-3 text-center font-bold text-slate-800">${item.nilai}</td>
+        <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs ${badgeColor}">${item.predikat}</span></td>
+      </tr>`;
+  });
+}

@@ -1,6 +1,14 @@
   <!-- ========================================== -->
   <!-- JAVASCRIPT (Client-Side Logic)             -->
   <!-- ========================================== -->
+  <?!= include('JavascriptHelper'); ?>
+  <?!= include('JavascriptCore'); ?>
+  <?!= include('JavascriptLogin'); ?>
+  <?!= include('JavascriptCrud'); ?>
+  <?!= include('JavascriptNilai'); ?>
+  <?!= include('JavascriptLaporan'); ?>
+  <?!= include('JavascriptDashboard'); ?>
+  <!--
   <script>
     // --- UTILITAS ---
     function showToast(msg, type = 'success') {
@@ -9,6 +17,15 @@
       toast.className = `fixed top-5 right-5 px-6 py-3 rounded shadow-lg text-white font-semibold z-50 fade-in ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    function gasRun(fnName, args, onSuccess, onError) {
+      const successHandler = typeof onSuccess === 'function' ? onSuccess : () => {};
+      const errorHandler = typeof onError === 'function' ? onError : (err) => showToast('Terjadi kesalahan: ' + (err && err.message ? err.message : err), 'error');
+
+      google.script.run
+        .withSuccessHandler(successHandler)
+        .withFailureHandler(errorHandler)[fnName](args);
     }
 
     // --- REGISTRY DOKUMEN & MENU (ROBUST MENU REGISTRY) ---
@@ -98,17 +115,20 @@ function capitalize(str) {
       if(!u || !p) return alert("Isi username & password!");
       
       document.getElementById('btnLogin').innerText = "Loading...";
-      google.script.run.withSuccessHandler(res => {
+      gasRun('checkLogin', { username: u, password: p }, res => {
         document.getElementById('btnLogin').innerText = "Masuk";
         if(res.success) {
           document.getElementById('viewLogin').classList.add('hidden');
           document.getElementById('viewDashboard').classList.remove('hidden');
           showToast(res.message);
-          pindahMenu('dashboard'); // Tampilkan Dashboard Analitik saat login sukses
+          pindahMenu('dashboard');
         } else {
           showToast(res.message, 'error');
         }
-      }).checkLogin(u, p);
+      }, err => {
+        document.getElementById('btnLogin').innerText = "Masuk";
+        showToast('Login gagal: ' + (err && err.message ? err.message : err), 'error');
+      });
     }
 
     function prosesLogout() {
@@ -137,7 +157,11 @@ const crudConfig = {
     create: 'createSiswa',
     update: 'updateSiswa',
     delete: 'deleteSiswa',
-    data: []
+    tableColumns: [
+      { label: 'ID', key: 0 },
+      { label: 'Nama', key: 1 },
+      { label: 'Kelas', key: 2 }
+    ]
   },
   guru: {
     formWrapperId: 'formGuru',
@@ -155,7 +179,11 @@ const crudConfig = {
     create: 'createGuru',
     update: 'updateGuru',
     delete: 'deleteGuru',
-    data: []
+    tableColumns: [
+      { label: 'ID', key: 0 },
+      { label: 'Nama', key: 1 },
+      { label: 'Mapel', key: 2 }
+    ]
   },
   mapel: {
     formWrapperId: 'formMapel',
@@ -172,7 +200,11 @@ const crudConfig = {
     create: 'createMapel',
     update: 'updateMapel',
     delete: 'deleteMapel',
-    data: []
+    tableColumns: [
+      { label: 'ID', key: 0 },
+      { label: 'Nama', key: 1 },
+      { label: 'Kode', key: 2 }
+    ]
   }
 };
 // RENDER FORM
@@ -273,13 +305,12 @@ function renderTable(entity, data) {
 
   data.forEach(row => {
     let cells = '';
-    if(cfg.data.length === 0) {
-      // tampilkan semua kolom
+    const columns = cfg.tableColumns || [];
+    if(columns.length === 0) {
       cells = row.map(val=>`<td>${val}</td>`).join('');
     } else {
-      // tampilkan hanya kolom tertentu
-      cfg.data.forEach((colName, idx) => {
-        let val = row[idx]; // asumsi urutan sesuai sheet
+      columns.forEach(col => {
+        const val = row[col.key] !== undefined ? row[col.key] : '';
         cells += `<td>${val}</td>`;
       });
     }
@@ -308,7 +339,7 @@ function simpanData(entity) {
   btn.innerText = "Menyimpan...";
 
   let func = obj.id === "" ? cfg.create : cfg.update;
-  google.script.run.withSuccessHandler(res => {
+  gasRun(func, obj, res => {
     btn.innerText = 'Simpan';
     const message = res && typeof res === 'object' ? res.message || 'Operasi selesai.' : res;
     showToast(message, res && res.success === false ? 'error' : 'success');
@@ -316,7 +347,10 @@ function simpanData(entity) {
       resetForm(entity);
       loadData(entity);
     }
-  })[func](obj);
+  }, err => {
+    btn.innerText = 'Simpan';
+    showToast('Gagal menyimpan data: ' + (err && err.message ? err.message : err), 'error');
+  });
 }
 
 // --- EDIT DATA ---
@@ -346,13 +380,15 @@ function hapusData(entity, id) {
   const cfg = crudConfig[entity];
   if(confirm("Hapus " + entity + " ini?")) {
     showToast("Menghapus...");
-    google.script.run.withSuccessHandler(res => {
+    gasRun(cfg.delete, id, res => {
       const message = res && typeof res === 'object' ? res.message || 'Operasi selesai.' : res;
       showToast(message, res && res.success === false ? 'error' : 'success');
       if (res && res.success !== false) {
         loadData(entity);
       }
-    })[cfg.delete](id);
+    }, err => {
+      showToast('Gagal menghapus data: ' + (err && err.message ? err.message : err), 'error');
+    });
   }
 }
 
@@ -922,3 +958,4 @@ function capitalize(str) {
       });
     }
   </script>
+  -->

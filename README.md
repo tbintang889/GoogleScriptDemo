@@ -13,6 +13,7 @@ Versi saat ini telah diperbaiki untuk menjadi lebih aman, lebih rapi, dan lebih 
 - Validasi sisi server ditambahkan untuk mencegah input kosong atau tidak valid.
 - Login menggunakan pencocokan aman terhadap password yang disimpan dengan hash SHA-256.
 - UI memberikan feedback yang lebih jelas saat simpan, edit, dan hapus data.
+- Frontend kini dipisah ke modul modular (`JavascriptHelper.html`, `JavascriptCore.html`, `JavascriptLogin.html`, `JavascriptCrud.html`, `JavascriptNilai.html`, `JavascriptLaporan.html`, `JavascriptDashboard.html`) untuk memudahkan maintenance dan reuse.
 
 ---
 
@@ -64,7 +65,14 @@ Pastikan Anda telah memasang:
 | `NilaiView.html` | Form CRUD nilai |
 | `laporanNilaiView.html` | Laporan read-only |
 | `dashboardView.html` | Dashboard analitik |
-| `Javascript.html` | Logika client-side dan registrasi menu |
+| `Javascript.html` | Orchestrator include untuk logika client-side modular |
+| `JavascriptHelper.html` | Helper UI dan fungsi shared seperti toast dan gasRun |
+| `JavascriptCore.html` | Registrasi menu dan navigasi antar modul |
+| `JavascriptLogin.html` | Flow login dan logout |
+| `JavascriptCrud.html` | CRUD generik untuk entitas utama |
+| `JavascriptNilai.html` | Modul nilai dan filter data penilaian |
+| `JavascriptLaporan.html` | Modul laporan dan statistik read-only |
+| `JavascriptDashboard.html` | Dashboard analitik, chart, KPI, leaderboard |
 
 ---
 
