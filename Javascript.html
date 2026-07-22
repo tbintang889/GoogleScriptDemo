@@ -15,7 +15,7 @@
     function pindahMenu(menu) {
   // daftar semua modul/menu
   const modulList = [
-    'siswa','guru'
+    'siswa','guru','nilai'
   ];
 
   // sembunyikan semua modul & reset tombol
@@ -48,7 +48,7 @@
   const loaders = {
     siswa: loadDataSiswa,
     guru: loadDataGuru,
-  
+    nilai: loadDataNilai
   };
 
   if (loaders[menu]) loaders[menu](); // panggil loader kalau ada
@@ -329,4 +329,170 @@ function capitalize(str) {
     function hapusGuru() {hapusData('guru')}
     renderForm('guru');
 
+  </script>
+
+  <script>
+    // --- LOGIKA MODUL NILAI (JOIN & FILTER BY SISWA / GURU) ---
+    let rawNilaiData = [];
+
+    function loadDataNilai() {
+      // 1. Load opsi dropdown Siswa dan Guru
+      google.script.run.withSuccessHandler(populateOptionsSiswaDanGuru).getOptionsSiswaDanGuru();
+
+      // 2. Load data Nilai ter-JOIN dari server
+      const tbody = document.getElementById('tabelNilai');
+      tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">Memuat data nilai...</td></tr>';
+
+      google.script.run.withSuccessHandler(res => {
+        rawNilaiData = res || [];
+        renderTabelNilai(rawNilaiData);
+      }).getNilai();
+    }
+
+    function populateOptionsSiswaDanGuru(res) {
+      if (!res) return;
+      
+      const selSiswaForm = document.getElementById('nilai_siswa_id');
+      const selGuruForm  = document.getElementById('nilai_guru_id');
+      const filterSiswa  = document.getElementById('filterBySiswa');
+      const filterGuru   = document.getElementById('filterByGuru');
+
+      // Simpan pilihan yang sedang terpilih agar tidak hilang saat reload
+      const currSiswa = selSiswaForm.value;
+      const currGuru  = selGuruForm.value;
+
+      // Populasikan Siswa
+      let optSiswaHtml = '<option value="">-- Pilih Siswa --</option>';
+      let optFilterSiswaHtml = '<option value="">-- Semua Siswa --</option>';
+      res.siswa.forEach(s => {
+        optSiswaHtml += `<option value="${s.id}">${s.nama}</option>`;
+        optFilterSiswaHtml += `<option value="${s.id}">${s.nama}</option>`;
+      });
+      selSiswaForm.innerHTML = optSiswaHtml;
+      filterSiswa.innerHTML = optFilterSiswaHtml;
+      if (currSiswa) selSiswaForm.value = currSiswa;
+
+      // Populasikan Guru
+      let optGuruHtml = '<option value="">-- Pilih Guru / Mapel --</option>';
+      let optFilterGuruHtml = '<option value="">-- Semua Guru / Mapel --</option>';
+      res.guru.forEach(g => {
+        optGuruHtml += `<option value="${g.id}">${g.nama}</option>`;
+        optFilterGuruHtml += `<option value="${g.id}">${g.nama}</option>`;
+      });
+      selGuruForm.innerHTML = optGuruHtml;
+      filterGuru.innerHTML = optFilterGuruHtml;
+      if (currGuru) selGuruForm.value = currGuru;
+    }
+
+    function renderTabelNilai(dataList) {
+      const tbody = document.getElementById('tabelNilai');
+      tbody.innerHTML = '';
+
+      if (!dataList || dataList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">Belum ada data nilai.</td></tr>';
+        return;
+      }
+
+      dataList.forEach(row => {
+        // row structure: [id, siswaId, namaSiswa, guruId, namaGuru, nilai, predikat]
+        const [id, siswaId, namaSiswa, guruId, namaGuru, nilai, predikat] = row;
+        
+        let badgeColor = 'bg-slate-100 text-slate-700';
+        if (predikat.startsWith('A')) badgeColor = 'bg-emerald-100 text-emerald-700 font-semibold';
+        else if (predikat.startsWith('B')) badgeColor = 'bg-blue-100 text-blue-700 font-semibold';
+        else if (predikat.startsWith('C')) badgeColor = 'bg-amber-100 text-amber-700 font-semibold';
+        else if (predikat.startsWith('D')) badgeColor = 'bg-red-100 text-red-700 font-semibold';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 border-b">
+            <td class="py-3 px-4 font-mono text-xs font-semibold text-slate-600">${id}</td>
+            <td class="py-3 px-4 font-medium text-slate-800">${namaSiswa}</td>
+            <td class="py-3 px-4 text-slate-700">${namaGuru}</td>
+            <td class="py-3 px-4 text-center font-bold text-slate-800">${nilai}</td>
+            <td class="py-3 px-4 text-center"><span class="px-2.5 py-1 rounded-full text-xs ${badgeColor}">${predikat}</span></td>
+            <td class="py-3 px-4 text-center space-x-2">
+              <button onclick="editNilai('${id}','${siswaId}','${guruId}','${nilai}','${predikat}')" class="text-blue-600 hover:text-blue-800 font-medium text-xs">Edit</button>
+              <button onclick="hapusNilai('${id}')" class="text-red-600 hover:text-red-800 font-medium text-xs">Hapus</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function filterTabelNilai() {
+      const selectedSiswaId = document.getElementById('filterBySiswa').value;
+      const selectedGuruId  = document.getElementById('filterByGuru').value;
+
+      let filtered = rawNilaiData.filter(row => {
+        // row[1] is siswaId, row[3] is guruId
+        const matchSiswa = selectedSiswaId === '' || row[1] === selectedSiswaId;
+        const matchGuru  = selectedGuruId  === '' || row[3] === selectedGuruId;
+        return matchSiswa && matchGuru;
+      });
+
+      renderTabelNilai(filtered);
+    }
+
+    function resetFilterNilai() {
+      document.getElementById('filterBySiswa').value = '';
+      document.getElementById('filterByGuru').value = '';
+      renderTabelNilai(rawNilaiData);
+    }
+
+    function simpanNilai() {
+      const id       = document.getElementById('nilai_id').value;
+      const siswa_id = document.getElementById('nilai_siswa_id').value;
+      const guru_id  = document.getElementById('nilai_guru_id').value;
+      const nilai    = document.getElementById('nilai_angka').value;
+      const predikat = document.getElementById('nilai_predikat').value;
+
+      if (!siswa_id) return showToast("Silakan pilih siswa!", "error");
+      if (!guru_id) return showToast("Silakan pilih guru!", "error");
+      if (nilai === "" || nilai < 0 || nilai > 100) return showToast("Isi nilai antara 0 - 100!", "error");
+
+      const obj = { id, siswa_id, guru_id, nilai, predikat };
+      const btn = document.getElementById('btnSimpanNilai');
+      btn.innerText = "Menyimpan...";
+
+      const func = (id === "") ? 'createNilai' : 'updateNilai';
+
+      google.script.run.withSuccessHandler(res => {
+        showToast(res);
+        resetFormNilai();
+        loadDataNilai();
+      })[func](obj);
+    }
+
+    function editNilai(id, siswaId, guruId, nilai, predikat) {
+      document.getElementById('titleFormNilai').innerText = "✏️ Edit Nilai Siswa";
+      document.getElementById('nilai_id').value = id;
+      document.getElementById('nilai_siswa_id').value = siswaId;
+      document.getElementById('nilai_guru_id').value = guruId;
+      document.getElementById('nilai_angka').value = nilai;
+      document.getElementById('nilai_predikat').value = predikat;
+
+      document.getElementById('btnSimpanNilai').innerText = "Update Nilai";
+      document.getElementById('btnBatalNilai').classList.remove('hidden');
+    }
+
+    function resetFormNilai() {
+      document.getElementById('titleFormNilai').innerText = "📝 Input / Edit Nilai Siswa";
+      document.getElementById('nilai_id').value = '';
+      document.getElementById('nilai_siswa_id').value = '';
+      document.getElementById('nilai_guru_id').value = '';
+      document.getElementById('nilai_angka').value = '';
+      document.getElementById('nilai_predikat').value = '';
+
+      document.getElementById('btnSimpanNilai').innerText = "Simpan Nilai";
+      document.getElementById('btnBatalNilai').classList.add('hidden');
+    }
+
+    function hapusNilai(id) {
+      if (confirm("Apakah Anda yakin ingin menghapus data nilai " + id + "?")) {
+        showToast("Menghapus...");
+        google.script.run.withSuccessHandler(res => {
+          showToast(res);
+          loadDataNilai();
+        }).deleteNilai(id);
+      }
+    }
   </script>

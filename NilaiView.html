@@ -1,0 +1,108 @@
+<!-- ========================================== -->
+<!-- MODUL: NILAI                               -->
+<!-- ========================================== -->
+<div id="modulNilai" class="hidden fade-in space-y-6">
+
+  <!-- Form Input / Edit Nilai -->
+  <div class="bg-white p-6 rounded-xl shadow-sm border">
+    <div class="flex items-center justify-between mb-4 border-b pb-3">
+      <h4 id="titleFormNilai" class="text-lg font-semibold text-slate-800">📝 Input / Edit Nilai Siswa</h4>
+      <span class="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">Form Penilaian</span>
+    </div>
+    
+    <input type="hidden" id="nilai_id">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+      <!-- Dropdown Siswa -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Siswa <span class="text-red-500">*</span></label>
+        <select id="nilai_siswa_id" class="border p-2.5 rounded-lg w-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+          <option value="">-- Memuat daftar siswa... --</option>
+        </select>
+      </div>
+
+      <!-- Dropdown Guru / Mapel -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Guru & Mata Pelajaran <span class="text-red-500">*</span></label>
+        <select id="nilai_guru_id" class="border p-2.5 rounded-lg w-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+          <option value="">-- Memuat daftar guru... --</option>
+        </select>
+      </div>
+
+      <!-- Input Angka Nilai -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nilai Angka (0 - 100) <span class="text-red-500">*</span></label>
+        <input type="number" id="nilai_angka" min="0" max="100" placeholder="Contoh: 85" class="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition">
+      </div>
+
+      <!-- Predikat (Otomatis / Manual) -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Predikat (Opsional)</label>
+        <select id="nilai_predikat" class="border p-2.5 rounded-lg w-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+          <option value="">-- Hitung Otomatis berdasarkan Nilai --</option>
+          <option value="A (Sangat Baik)">A (Sangat Baik)</option>
+          <option value="B (Baik)">B (Baik)</option>
+          <option value="C (Cukup)">C (Cukup)</option>
+          <option value="D (Perlu Bimbingan)">D (Perlu Bimbingan)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tombol Aksi -->
+    <div class="flex gap-3">
+      <button id="btnSimpanNilai" onclick="simpanNilai()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
+        Simpan Nilai
+      </button>
+      <button id="btnBatalNilai" onclick="resetFormNilai()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-5 py-2.5 rounded-lg transition hidden">
+        Batal
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Tabel Nilai -->
+  <div class="bg-white rounded-xl shadow-sm border p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4 pb-4 border-b">
+      <div>
+        <h4 class="text-lg font-semibold text-slate-800">📊 Daftar Nilai Siswa</h4>
+        <p class="text-sm text-slate-500 mt-0.5">Filter dan kelola nilai siswa berdasarkan siswa atau guru mata pelajaran</p>
+      </div>
+
+      <!-- Filter By Siswa & By Guru -->
+      <div class="flex flex-wrap gap-2 w-full md:w-auto">
+        <select id="filterBySiswa" onchange="filterTabelNilai()" class="border p-2 rounded-lg text-sm bg-slate-50 focus:bg-white border-slate-300">
+          <option value="">-- Filter By Siswa --</option>
+        </select>
+
+        <select id="filterByGuru" onchange="filterTabelNilai()" class="border p-2 rounded-lg text-sm bg-slate-50 focus:bg-white border-slate-300">
+          <option value="">-- Filter By Guru / Mapel --</option>
+        </select>
+
+        <button onclick="resetFilterNilai()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-lg text-sm font-medium transition">
+          Reset Filter
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabel Render Nilai -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-slate-50 border-b text-slate-600 text-xs uppercase font-semibold">
+          <tr>
+            <th class="py-3 px-4">ID Nilai</th>
+            <th class="py-3 px-4">Siswa (Kelas)</th>
+            <th class="py-3 px-4">Guru & Mata Pelajaran</th>
+            <th class="py-3 px-4 text-center">Nilai</th>
+            <th class="py-3 px-4 text-center">Predikat</th>
+            <th class="py-3 px-4 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabelNilai" class="divide-y divide-slate-100 text-sm">
+          <tr>
+            <td colspan="6" class="py-6 text-center text-slate-500">Memuat data nilai...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
