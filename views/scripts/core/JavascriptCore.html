@@ -24,7 +24,12 @@
     laporanNilai: {
       title: '📊 Laporan Rekapitulasi Nilai Siswa',
       loader: () => typeof loadDataLaporanNilai === 'function' && loadDataLaporanNilai()
-    }
+    },
+  jurusan: {
+    title: "Manajemen Data Jurusan",
+    loader: () => typeof loadDataJurusan === 'function' && loadDataJurusan()
+  }
+
   };
 
   function registerMenu(menuKey, config) {

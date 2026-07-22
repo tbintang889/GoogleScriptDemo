@@ -93,7 +93,8 @@ function resolveTemplatePath(filename) {
     'JavascriptCrud': 'views/scripts/modules/crud/JavascriptCrud',
     'JavascriptNilai': 'views/scripts/modules/nilai/JavascriptNilai',
     'JavascriptLaporan': 'views/scripts/modules/laporan/JavascriptLaporan',
-    'JavascriptDashboard': 'views/scripts/modules/dashboard/JavascriptDashboard'
+    'JavascriptDashboard': 'views/scripts/modules/dashboard/JavascriptDashboard',
+    'JurusanView': 'views/modules/JurusanView',
   };
 
   return includeMap[normalizedName] || normalizedName;
