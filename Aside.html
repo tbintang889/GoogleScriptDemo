@@ -11,6 +11,6 @@
     <button onclick="pindahMenu('laporanNilai')" id="menuLaporanNilaiBtn" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800">📊 Laporan Nilai</button>
   </nav>
   <div class="p-4 border-t border-slate-700">
-    <button onclick="prosesLogout()" class="w-full px-4 py-2 text-red-400 hover:bg-red-500 hover:text-white rounded transition">Keluar</button>
+    <button onclick="if (window.prosesLogout) { window.prosesLogout(); } else { console.error('Logout handler not ready'); }" class="w-full px-4 py-2 text-red-400 hover:bg-red-500 hover:text-white rounded transition">Keluar</button>
   </div>
 </aside>

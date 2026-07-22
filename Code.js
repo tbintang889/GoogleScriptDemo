@@ -81,7 +81,8 @@ function doGet() {
 }
 
 function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename)
+  return HtmlService.createTemplateFromFile(filename)
+    .evaluate()
     .getContent();
 }
 
@@ -90,6 +91,12 @@ function include(filename) {
 // ==========================================
 function checkLogin(username, password) {
   try {
+    if (typeof username === 'object' && username !== null && password === undefined) {
+      var creds = username;
+      username = creds.username;
+      password = creds.password;
+    }
+
     var sheet = ensureSheet('Users', ['username', 'password']);
     var data = sheet.getDataRange().getValues();
 

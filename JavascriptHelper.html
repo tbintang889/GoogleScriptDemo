@@ -15,12 +15,20 @@
       ? onError
       : (err) => showToast('Terjadi kesalahan: ' + (err && err.message ? err.message : err), 'error');
 
-    google.script.run
-      .withSuccessHandler(successHandler)
-      .withFailureHandler(errorHandler)[fnName](args);
+    const runner = google.script.run.withSuccessHandler(successHandler).withFailureHandler(errorHandler);
+
+    if (Array.isArray(args)) {
+      runner[fnName](...args);
+    } else {
+      runner[fnName](args);
+    }
   }
 
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
+
+  window.showToast = showToast;
+  window.gasRun = gasRun;
+  window.capitalize = capitalize;
 </script>

@@ -6,22 +6,34 @@
   let chartGuruInst = null;
 
   function loadDataDashboard() {
-    google.script.run.withSuccessHandler(renderDashboard).getDashboardSummary();
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run.withSuccessHandler(renderDashboard).getDashboardSummary();
+    }
   }
 
   function renderDashboard(res) {
     if (!res) return;
 
-    document.getElementById('dashTotalSiswa').innerText = res.kpi.totalSiswa || 0;
-    document.getElementById('dashTotalGuru').innerText = res.kpi.totalGuru || 0;
-    document.getElementById('dashTotalMapel').innerText = res.kpi.totalMapel || 0;
-    document.getElementById('dashAvgNilai').innerText = res.kpi.avgNilaiSekolah || 0;
+    const safeValue = (value, fallback = 0) => (typeof value === 'number' ? value : Number(value) || fallback);
+
+    const totalSiswaEl = document.getElementById('dashTotalSiswa');
+    const totalGuruEl = document.getElementById('dashTotalGuru');
+    const totalMapelEl = document.getElementById('dashTotalMapel');
+    const avgNilaiEl = document.getElementById('dashAvgNilai');
+
+    if (totalSiswaEl) totalSiswaEl.innerText = safeValue(res.kpi && res.kpi.totalSiswa, 0);
+    if (totalGuruEl) totalGuruEl.innerText = safeValue(res.kpi && res.kpi.totalGuru, 0);
+    if (totalMapelEl) totalMapelEl.innerText = safeValue(res.kpi && res.kpi.totalMapel, 0);
+    if (avgNilaiEl) avgNilaiEl.innerText = safeValue(res.kpi && res.kpi.avgNilaiSekolah, 0);
 
     const avgBadge = document.getElementById('dashAvgBadge');
-    if (res.kpi.avgNilaiSekolah >= 85) avgBadge.innerText = 'Sangat Baik (A)';
-    else if (res.kpi.avgNilaiSekolah >= 75) avgBadge.innerText = 'Baik (B)';
-    else if (res.kpi.avgNilaiSekolah >= 65) avgBadge.innerText = 'Cukup (C)';
-    else avgBadge.innerText = 'Perlu Bimbingan';
+    const avgValue = safeValue(res.kpi && res.kpi.avgNilaiSekolah, 0);
+    if (avgBadge) {
+      if (avgValue >= 85) avgBadge.innerText = 'Sangat Baik (A)';
+      else if (avgValue >= 75) avgBadge.innerText = 'Baik (B)';
+      else if (avgValue >= 65) avgBadge.innerText = 'Cukup (C)';
+      else avgBadge.innerText = 'Perlu Bimbingan';
+    }
 
     renderChartJurusan(res.siswaPerJurusan);
     renderChartMapel(res.mapelStats);
@@ -200,4 +212,6 @@
         </tr>`;
     });
   }
+  window.loadDataDashboard = loadDataDashboard;
+  window.renderDashboard = renderDashboard;
 </script>
