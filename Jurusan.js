@@ -72,3 +72,16 @@ function deleteJurusan(id) {
     return { success: false, message: 'Gagal menghapus jurusan: ' + error.message };
   }
 }
+
+/**
+ * Helper untuk mengambil opsi nama jurusan (digunakan di dropdown Form Siswa)
+ */
+function getOptionsJurusan() {
+  var sheet = getSheet('Jurusan');
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  if (data.length > 0) data.shift();
+  return data.map(function(r) {
+    return { id: r[0], nama: r[1], kode: r[2] };
+  });
+}
